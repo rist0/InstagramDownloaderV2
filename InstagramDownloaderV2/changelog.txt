@@ -1,0 +1,132 @@
+﻿2.0.0.0
+[New]
+- Removed PRO version completely, software is fully-free now
+- Added support for multiple inputs
+- Added support for download limit of specific inputs (0 = no limit)
+- Csv file now fully supports different encodings and emojis
+- Csv file now fully supports multi-line captions
+- Csv file no longer miscreates additional columns if the delimiter is found within the caption
+- Added upload date, video views, media dimensions and some more as columns in the stats file
+- Added several new filters
+- Added function to login (and download private profiles, if you are following them)
+- Added multi-threading (which I haven't fully tested how Instagram reacts, if you use a lot of threads, so use with caution)
+- Added settings serialization (means that settings will be saved/restore when closing/re-opening the software)
+
+[Improvements]
+- Improved software stability (changed how things work back-end which should make the software smoother and easier to scale)
+- Improved the data scraping method (uses JSON now, compared to Regex before, which is a lot more precise and less chances for error)
+- Improved the filter for likes/comments while downloading, now you can use both simultaenuosly as well
+- Improved the tool tip on the input types to give more detailed information about what kind of input it takes
+- Adjusted the controls on the Main tab in order to make it more user friendly
+- Improved the stats file generation by using a third party library for CSV serialization
+
+[Changes]
+- Replaced the single photo/video downloader with URL downloader
+- Reduced the amount of logs
+
+[Fix]
+- Fixed a very rare issue with the software crashing when trying to close it
+- Fixed an issue causing skipped medias to count towards the total downloads count
+- Fixed an issue with "Clear All Input" button in downloader not applying to hashtag/location
+- Fixed an issue with the stats file causing it to remove its contents when downloading large amount of photos
+- Fixed the upload date column in stats file to display as date and time instead of unix time
+
+1.0.0.10
+- Fixed an issue with single video downloader not downloading the video
+- Fixed an issue with the single photo downloader not retrieving stats
+- Fixed an issue with the single video downloader not retrieving stats
+- Fixed an issue with the single photo/video downloader not saving the caption on file (if enabled)
+
+1.0.0.9
+- Changed the licensing system to a new one (because the old one has shut down)
+- All previously existing licenses have been migrated to the system
+
+1.0.0.8
+- Fixed an issue causing the software to loop infinitely when trying to download
+
+1.0.0.7
+- Adjusted the GUI a bit
+- Fixed the single user downloader not working properly
+- Fixed a crash when using the single photo downloader
+- Fixed the caption not being properly scraped in the single photo downloader
+- Fixed a bug not displaying new lines properly in the caption of single photo downloader
+- Fixed a crash when using the single video downloader
+- Fixed a bug not being able to find the download link of a video when using the single video downloader
+- Fixed the caption not being properly scraped in the single video downloader
+- Fixed a bug not displaying new lines properly in the caption of single video downloader
+- Fixed the hashtag downloader not working properly
+- Fixed the location downloader not working properly
+
+1.0.0.6
+- Fixed a bug that caused the software to stop downloading in case it fails to scrape stats for photos
+- Added more information when clicking the pro version button
+- Pro: added Instagram URL in export file of hashtag/location
+- Pro: added location photo downloader
+
+1.0.0.5
+- Fixed a rare software crash
+- Fixed the comments filter not working
+- Fixed the captions sometimes not being the correct for the specific picture
+- Fixed a rare bug which caused the software to stop downloading
+- Added date of post in the stats for single photo/video
+- Pro: fixed a bug with the stats file to prevent issues when converting to excel
+
+1.0.0.4
+- Added a new tab "Settings"
+- Moved the changelog from the "Help" tab to the "Main" tab
+- Removed the "Help" tab
+- Added a new feature to save the posts of single user to separate folder
+- Fixed a bug with skipping photos not working
+- Added a new feature to save the download folder (will be automatically loaded when you start the software)
+- Added a new feature to remove the emoji text from captions
+- Removed the maximize button
+- Fixed a bug with stop download button not working when downloading single user's posts
+- Pro: added a new feature to save stats for all posts while downloading a single user's posts
+- Pro: added a new feature to choose custom delimiter for the stats file
+- Pro: fixed an issue with the caption in the stats file breaking the delimiter
+- Pro: added a new feature to scrape photos/videos from a hashtag
+- Pro: added all existing filters to the hashtag scraper
+- Pro: added a new feature to save stats for all posts while downloading posts from a hashtag
+- Pro: fixed the stop download button when downloading a hashtag
+- Pro: improved the exported file by a lot, fixing many bugs causing it to break
+
+1.0.0.3
+- Fixed a bug that caused single video downloader not to work after using single photo downloader
+- Added a new feature to stop after certain amount of downloads
+- Added a new feature to skip posts with less/more than certain amount of likes/comments
+- Improved the single user posts downloading by a lot
+- Start button will be disabled after starting to download
+- Stop button will be disabled before starting to download
+- Fixed a rare case when the software doesn't scrape the caption of a single video
+- Fixed a bug in the logs showing that the caption has been downloaded (even when it's not enabled)
+
+1.0.0.2
+- Added a new icon to the software
+- Improved single user's photos downloading
+- The logs will automatically scroll down as they are added
+- Added a new feature to skip videos (when downloading user's posts)
+- Added a new feature to skip photos (when downloading user's posts)
+- Added more logs when downloading a single user's posts
+- Added a stop button (works only when downloading a single user's posts)
+- Fixed the groupboxes for stats and radiobuttons not working properly in "Downloader" tab
+- Added a check if download folder has been chosen before downloading
+- Changed the starting position of the software to the center of the screen
+
+1.0.0.1
+- Added proxy support
+- Added custom user agent support (can be randomized)
+- Added a new feature to download video(s) from a link
+- Added stats when downloading single photo or video
+- Added an option to choose custom location and file when saving the logs
+- Added vertical scrollbar to the logs
+- Added new logs when saving the logs (successfully or failed)
+- Added an option to select folder where photos will be downloaded
+- Added an option to save caption (only when downloading a single photo/video for now)
+- Added new logs when saving the caption (successfully or failed)
+- Added a tooltip when hovering the input textbox with information how it works including examples
+- Fixed File > Exit in the menu not working
+- Fixed "Clear All Input" in "Downloader" tab button not working
+- Fixed a rare bug that causes the software to crash (when attempting to download invalid URL)
+
+1.0.0.0 (16.06.2016)
+- Initial release

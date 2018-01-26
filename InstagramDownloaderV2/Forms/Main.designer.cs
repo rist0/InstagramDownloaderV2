@@ -31,9 +31,15 @@
             this.components = new System.ComponentModel.Container();
             this.tabMain = new System.Windows.Forms.TabControl();
             this.tabPageGeneral = new System.Windows.Forms.TabPage();
-            this.gbVersion = new System.Windows.Forms.GroupBox();
-            this.gbCredits = new System.Windows.Forms.GroupBox();
             this.gbChangelog = new System.Windows.Forms.GroupBox();
+            this.txtChangelog = new System.Windows.Forms.TextBox();
+            this.gbCreditsAndVersion = new System.Windows.Forms.GroupBox();
+            this.gbCredits = new System.Windows.Forms.GroupBox();
+            this.linkLabel2 = new System.Windows.Forms.LinkLabel();
+            this.linkLabel1 = new System.Windows.Forms.LinkLabel();
+            this.gbVersion = new System.Windows.Forms.GroupBox();
+            this.lblLatestVersion = new System.Windows.Forms.Label();
+            this.lblCurrentVersion = new System.Windows.Forms.Label();
             this.tabPageDownloader = new System.Windows.Forms.TabPage();
             this.gbInputParams = new System.Windows.Forms.GroupBox();
             this.lvInput = new System.Windows.Forms.ListView();
@@ -45,6 +51,9 @@
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
+            this.exportSelectedRowsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.exportAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.panel1 = new System.Windows.Forms.Panel();
             this.gbInput = new System.Windows.Forms.GroupBox();
             this.label6 = new System.Windows.Forms.Label();
@@ -95,6 +104,7 @@
             this.btnLoadDescriptionStrings = new System.Windows.Forms.Button();
             this.tabPageSettings = new System.Windows.Forms.TabPage();
             this.gbAccountSettings = new System.Windows.Forms.GroupBox();
+            this.btnAccountLogout = new System.Windows.Forms.Button();
             this.cbHidePassword = new System.Windows.Forms.CheckBox();
             this.btnAccountLogin = new System.Windows.Forms.Button();
             this.lblAccountLoginStatus = new System.Windows.Forms.Label();
@@ -104,7 +114,6 @@
             this.txtAccountUsername = new System.Windows.Forms.TextBox();
             this.gbDownloadSettings = new System.Windows.Forms.GroupBox();
             this.txtDelimiter = new System.Windows.Forms.TextBox();
-            this.cbRemoveEmoji = new System.Windows.Forms.CheckBox();
             this.cbSaveStats = new System.Windows.Forms.CheckBox();
             this.cbCreateNewFolder = new System.Windows.Forms.CheckBox();
             this.btnBrowseDownloadDirectory = new System.Windows.Forms.Button();
@@ -127,15 +136,17 @@
             this.btnExportLogs = new System.Windows.Forms.Button();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.updateToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.exitToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.filterToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.resetAllFilterToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
-            this.exportSelectedRowsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.exportAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.inputTypeTips = new System.Windows.Forms.ToolTip(this.components);
             this.tabMain.SuspendLayout();
             this.tabPageGeneral.SuspendLayout();
+            this.gbChangelog.SuspendLayout();
+            this.gbCreditsAndVersion.SuspendLayout();
+            this.gbCredits.SuspendLayout();
+            this.gbVersion.SuspendLayout();
             this.tabPageDownloader.SuspendLayout();
             this.gbInputParams.SuspendLayout();
             this.contextMenuStripForListBoxInput.SuspendLayout();
@@ -171,9 +182,8 @@
             // 
             // tabPageGeneral
             // 
-            this.tabPageGeneral.Controls.Add(this.gbVersion);
-            this.tabPageGeneral.Controls.Add(this.gbCredits);
             this.tabPageGeneral.Controls.Add(this.gbChangelog);
+            this.tabPageGeneral.Controls.Add(this.gbCreditsAndVersion);
             this.tabPageGeneral.Location = new System.Drawing.Point(4, 22);
             this.tabPageGeneral.Name = "tabPageGeneral";
             this.tabPageGeneral.Padding = new System.Windows.Forms.Padding(3);
@@ -182,34 +192,107 @@
             this.tabPageGeneral.Text = "General";
             this.tabPageGeneral.UseVisualStyleBackColor = true;
             // 
-            // gbVersion
+            // gbChangelog
             // 
-            this.gbVersion.Anchor = System.Windows.Forms.AnchorStyles.Right;
-            this.gbVersion.Location = new System.Drawing.Point(378, 378);
-            this.gbVersion.Name = "gbVersion";
-            this.gbVersion.Size = new System.Drawing.Size(256, 98);
-            this.gbVersion.TabIndex = 1;
-            this.gbVersion.TabStop = false;
-            this.gbVersion.Text = "Version details";
+            this.gbChangelog.Controls.Add(this.txtChangelog);
+            this.gbChangelog.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.gbChangelog.Location = new System.Drawing.Point(3, 3);
+            this.gbChangelog.Name = "gbChangelog";
+            this.gbChangelog.Size = new System.Drawing.Size(631, 399);
+            this.gbChangelog.TabIndex = 0;
+            this.gbChangelog.TabStop = false;
+            this.gbChangelog.Text = "Changelog";
+            // 
+            // txtChangelog
+            // 
+            this.txtChangelog.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.txtChangelog.Location = new System.Drawing.Point(3, 16);
+            this.txtChangelog.Multiline = true;
+            this.txtChangelog.Name = "txtChangelog";
+            this.txtChangelog.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+            this.txtChangelog.Size = new System.Drawing.Size(625, 380);
+            this.txtChangelog.TabIndex = 0;
+            // 
+            // gbCreditsAndVersion
+            // 
+            this.gbCreditsAndVersion.Controls.Add(this.gbCredits);
+            this.gbCreditsAndVersion.Controls.Add(this.gbVersion);
+            this.gbCreditsAndVersion.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.gbCreditsAndVersion.Location = new System.Drawing.Point(3, 402);
+            this.gbCreditsAndVersion.Name = "gbCreditsAndVersion";
+            this.gbCreditsAndVersion.Size = new System.Drawing.Size(631, 92);
+            this.gbCreditsAndVersion.TabIndex = 1;
+            this.gbCreditsAndVersion.TabStop = false;
             // 
             // gbCredits
             // 
-            this.gbCredits.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.gbCredits.Location = new System.Drawing.Point(6, 378);
+            this.gbCredits.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.gbCredits.Controls.Add(this.linkLabel2);
+            this.gbCredits.Controls.Add(this.linkLabel1);
+            this.gbCredits.Location = new System.Drawing.Point(6, 19);
             this.gbCredits.Name = "gbCredits";
-            this.gbCredits.Size = new System.Drawing.Size(248, 98);
+            this.gbCredits.Size = new System.Drawing.Size(283, 62);
             this.gbCredits.TabIndex = 1;
             this.gbCredits.TabStop = false;
             this.gbCredits.Text = "Credits";
             // 
-            // gbChangelog
+            // linkLabel2
             // 
-            this.gbChangelog.Location = new System.Drawing.Point(6, 6);
-            this.gbChangelog.Name = "gbChangelog";
-            this.gbChangelog.Size = new System.Drawing.Size(625, 366);
-            this.gbChangelog.TabIndex = 0;
-            this.gbChangelog.TabStop = false;
-            this.gbChangelog.Text = "Changelog";
+            this.linkLabel2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+            this.linkLabel2.AutoSize = true;
+            this.linkLabel2.Location = new System.Drawing.Point(155, 24);
+            this.linkLabel2.Name = "linkLabel2";
+            this.linkLabel2.Size = new System.Drawing.Size(102, 13);
+            this.linkLabel2.TabIndex = 0;
+            this.linkLabel2.TabStop = true;
+            this.linkLabel2.Text = "www.smmnova.com";
+            this.linkLabel2.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkLabel2_LinkClicked);
+            // 
+            // linkLabel1
+            // 
+            this.linkLabel1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+            this.linkLabel1.AutoSize = true;
+            this.linkLabel1.Location = new System.Drawing.Point(25, 24);
+            this.linkLabel1.Name = "linkLabel1";
+            this.linkLabel1.Size = new System.Drawing.Size(86, 13);
+            this.linkLabel1.TabIndex = 0;
+            this.linkLabel1.TabStop = true;
+            this.linkLabel1.Text = "www.imristo.com";
+            this.linkLabel1.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkLabel1_LinkClicked);
+            // 
+            // gbVersion
+            // 
+            this.gbVersion.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.gbVersion.Controls.Add(this.lblLatestVersion);
+            this.gbVersion.Controls.Add(this.lblCurrentVersion);
+            this.gbVersion.Location = new System.Drawing.Point(299, 19);
+            this.gbVersion.Name = "gbVersion";
+            this.gbVersion.Size = new System.Drawing.Size(326, 62);
+            this.gbVersion.TabIndex = 1;
+            this.gbVersion.TabStop = false;
+            this.gbVersion.Text = "Version details";
+            // 
+            // lblLatestVersion
+            // 
+            this.lblLatestVersion.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblLatestVersion.AutoSize = true;
+            this.lblLatestVersion.Location = new System.Drawing.Point(165, 24);
+            this.lblLatestVersion.Name = "lblLatestVersion";
+            this.lblLatestVersion.Size = new System.Drawing.Size(79, 13);
+            this.lblLatestVersion.TabIndex = 0;
+            this.lblLatestVersion.Text = "Latest version: ";
+            // 
+            // lblCurrentVersion
+            // 
+            this.lblCurrentVersion.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblCurrentVersion.AutoSize = true;
+            this.lblCurrentVersion.Location = new System.Drawing.Point(33, 24);
+            this.lblCurrentVersion.Name = "lblCurrentVersion";
+            this.lblCurrentVersion.Size = new System.Drawing.Size(84, 13);
+            this.lblCurrentVersion.TabIndex = 0;
+            this.lblCurrentVersion.Text = "Current version: ";
             // 
             // tabPageDownloader
             // 
@@ -278,7 +361,7 @@
             this.exportSelectedRowsToolStripMenuItem,
             this.exportAllToolStripMenuItem});
             this.contextMenuStripForListBoxInput.Name = "contextMenuStripForListBoxInput";
-            this.contextMenuStripForListBoxInput.Size = new System.Drawing.Size(194, 148);
+            this.contextMenuStripForListBoxInput.Size = new System.Drawing.Size(194, 126);
             // 
             // editSelectedRowToolStripMenuItem
             // 
@@ -305,6 +388,25 @@
             this.toolStripMenuItem2.Size = new System.Drawing.Size(193, 22);
             this.toolStripMenuItem2.Text = "Remove All";
             this.toolStripMenuItem2.Click += new System.EventHandler(this.toolStripMenuItem2_Click);
+            // 
+            // toolStripSeparator2
+            // 
+            this.toolStripSeparator2.Name = "toolStripSeparator2";
+            this.toolStripSeparator2.Size = new System.Drawing.Size(190, 6);
+            // 
+            // exportSelectedRowsToolStripMenuItem
+            // 
+            this.exportSelectedRowsToolStripMenuItem.Name = "exportSelectedRowsToolStripMenuItem";
+            this.exportSelectedRowsToolStripMenuItem.Size = new System.Drawing.Size(193, 22);
+            this.exportSelectedRowsToolStripMenuItem.Text = "Export Selected Row(s)";
+            this.exportSelectedRowsToolStripMenuItem.Click += new System.EventHandler(this.exportSelectedRowsToolStripMenuItem_Click);
+            // 
+            // exportAllToolStripMenuItem
+            // 
+            this.exportAllToolStripMenuItem.Name = "exportAllToolStripMenuItem";
+            this.exportAllToolStripMenuItem.Size = new System.Drawing.Size(193, 22);
+            this.exportAllToolStripMenuItem.Text = "Export All";
+            this.exportAllToolStripMenuItem.Click += new System.EventHandler(this.exportAllToolStripMenuItem_Click);
             // 
             // panel1
             // 
@@ -459,6 +561,9 @@
             this.rbLocation.TabIndex = 0;
             this.rbLocation.TabStop = true;
             this.rbLocation.Text = "Location";
+            this.inputTypeTips.SetToolTip(this.rbLocation, "Input takes one location ID per input.\r\n\r\nExample:\r\n212936194\r\n\r\nTo find your loc" +
+        "ation ID, visit the following page:\r\nhttps://www.instagram.com/explore/locations" +
+        "/");
             this.rbLocation.UseVisualStyleBackColor = true;
             // 
             // rbHashtag
@@ -470,6 +575,8 @@
             this.rbHashtag.TabIndex = 0;
             this.rbHashtag.TabStop = true;
             this.rbHashtag.Text = "Hashtag";
+            this.inputTypeTips.SetToolTip(this.rbHashtag, "Input takes one hashtag per input.\r\n\r\nDo NOT include # in front of hashtag(s).\r\n\r" +
+        "\nExamples:\r\nnature\r\nfitness");
             this.rbHashtag.UseVisualStyleBackColor = true;
             // 
             // rbUsername
@@ -481,6 +588,8 @@
             this.rbUsername.TabIndex = 0;
             this.rbUsername.TabStop = true;
             this.rbUsername.Text = "Username";
+            this.inputTypeTips.SetToolTip(this.rbUsername, "Input takes one username per input.\r\n\r\nDo NOT include @ in front of the username." +
+        "\r\n\r\nExamples:\r\ninstagram");
             this.rbUsername.UseVisualStyleBackColor = true;
             // 
             // rbUrl
@@ -492,6 +601,9 @@
             this.rbUrl.TabIndex = 0;
             this.rbUrl.TabStop = true;
             this.rbUrl.Text = "Url(s)";
+            this.inputTypeTips.SetToolTip(this.rbUrl, "Input takes one URL per input.\r\n\r\nExamples:\r\nhttps://www.instagram.com/p/BeWKx0JB" +
+        "DTS/?taken-by=instagram\r\nhttps://www.instagram.com/p/BeWKx0JBDTS\r\nhttps://www.in" +
+        "stagram.com/p/BeWKx0JBDTS/");
             this.rbUrl.UseVisualStyleBackColor = true;
             this.rbUrl.CheckedChanged += new System.EventHandler(this.rbUrl_CheckedChanged);
             // 
@@ -833,6 +945,7 @@
             // 
             // gbAccountSettings
             // 
+            this.gbAccountSettings.Controls.Add(this.btnAccountLogout);
             this.gbAccountSettings.Controls.Add(this.cbHidePassword);
             this.gbAccountSettings.Controls.Add(this.btnAccountLogin);
             this.gbAccountSettings.Controls.Add(this.lblAccountLoginStatus);
@@ -840,12 +953,23 @@
             this.gbAccountSettings.Controls.Add(this.lblAccountUsername);
             this.gbAccountSettings.Controls.Add(this.txtAccountPassword);
             this.gbAccountSettings.Controls.Add(this.txtAccountUsername);
-            this.gbAccountSettings.Location = new System.Drawing.Point(14, 400);
+            this.gbAccountSettings.Location = new System.Drawing.Point(14, 377);
             this.gbAccountSettings.Name = "gbAccountSettings";
-            this.gbAccountSettings.Size = new System.Drawing.Size(584, 89);
+            this.gbAccountSettings.Size = new System.Drawing.Size(584, 80);
             this.gbAccountSettings.TabIndex = 2;
             this.gbAccountSettings.TabStop = false;
             this.gbAccountSettings.Text = "Account Settings";
+            // 
+            // btnAccountLogout
+            // 
+            this.btnAccountLogout.Enabled = false;
+            this.btnAccountLogout.Location = new System.Drawing.Point(492, 48);
+            this.btnAccountLogout.Name = "btnAccountLogout";
+            this.btnAccountLogout.Size = new System.Drawing.Size(75, 23);
+            this.btnAccountLogout.TabIndex = 4;
+            this.btnAccountLogout.Text = "Logout";
+            this.btnAccountLogout.UseVisualStyleBackColor = true;
+            this.btnAccountLogout.Click += new System.EventHandler(this.btnAccountLogout_Click);
             // 
             // cbHidePassword
             // 
@@ -861,7 +985,7 @@
             // 
             // btnAccountLogin
             // 
-            this.btnAccountLogin.Location = new System.Drawing.Point(492, 30);
+            this.btnAccountLogin.Location = new System.Drawing.Point(492, 19);
             this.btnAccountLogin.Name = "btnAccountLogin";
             this.btnAccountLogin.Size = new System.Drawing.Size(75, 23);
             this.btnAccountLogin.TabIndex = 2;
@@ -872,7 +996,7 @@
             // lblAccountLoginStatus
             // 
             this.lblAccountLoginStatus.AutoSize = true;
-            this.lblAccountLoginStatus.Location = new System.Drawing.Point(14, 70);
+            this.lblAccountLoginStatus.Location = new System.Drawing.Point(14, 58);
             this.lblAccountLoginStatus.Name = "lblAccountLoginStatus";
             this.lblAccountLoginStatus.Size = new System.Drawing.Size(40, 13);
             this.lblAccountLoginStatus.TabIndex = 1;
@@ -913,7 +1037,6 @@
             // gbDownloadSettings
             // 
             this.gbDownloadSettings.Controls.Add(this.txtDelimiter);
-            this.gbDownloadSettings.Controls.Add(this.cbRemoveEmoji);
             this.gbDownloadSettings.Controls.Add(this.cbSaveStats);
             this.gbDownloadSettings.Controls.Add(this.cbCreateNewFolder);
             this.gbDownloadSettings.Controls.Add(this.btnBrowseDownloadDirectory);
@@ -921,33 +1044,22 @@
             this.gbDownloadSettings.Controls.Add(this.lblDownloadFolder);
             this.gbDownloadSettings.Location = new System.Drawing.Point(14, 237);
             this.gbDownloadSettings.Name = "gbDownloadSettings";
-            this.gbDownloadSettings.Size = new System.Drawing.Size(584, 157);
+            this.gbDownloadSettings.Size = new System.Drawing.Size(584, 134);
             this.gbDownloadSettings.TabIndex = 1;
             this.gbDownloadSettings.TabStop = false;
             this.gbDownloadSettings.Text = "Download Settings";
             // 
             // txtDelimiter
             // 
-            this.txtDelimiter.Location = new System.Drawing.Point(323, 126);
+            this.txtDelimiter.Location = new System.Drawing.Point(323, 102);
             this.txtDelimiter.Name = "txtDelimiter";
             this.txtDelimiter.Size = new System.Drawing.Size(32, 20);
             this.txtDelimiter.TabIndex = 4;
             // 
-            // cbRemoveEmoji
-            // 
-            this.cbRemoveEmoji.AutoSize = true;
-            this.cbRemoveEmoji.Location = new System.Drawing.Point(17, 105);
-            this.cbRemoveEmoji.Name = "cbRemoveEmoji";
-            this.cbRemoveEmoji.Size = new System.Drawing.Size(194, 17);
-            this.cbRemoveEmoji.TabIndex = 3;
-            this.cbRemoveEmoji.TabStop = false;
-            this.cbRemoveEmoji.Text = "Remove emoji symbols from caption";
-            this.cbRemoveEmoji.UseVisualStyleBackColor = true;
-            // 
             // cbSaveStats
             // 
             this.cbSaveStats.AutoSize = true;
-            this.cbSaveStats.Location = new System.Drawing.Point(17, 128);
+            this.cbSaveStats.Location = new System.Drawing.Point(17, 104);
             this.cbSaveStats.Name = "cbSaveStats";
             this.cbSaveStats.Size = new System.Drawing.Size(311, 17);
             this.cbSaveStats.TabIndex = 3;
@@ -958,7 +1070,7 @@
             // cbCreateNewFolder
             // 
             this.cbCreateNewFolder.AutoSize = true;
-            this.cbCreateNewFolder.Location = new System.Drawing.Point(17, 82);
+            this.cbCreateNewFolder.Location = new System.Drawing.Point(17, 81);
             this.cbCreateNewFolder.Name = "cbCreateNewFolder";
             this.cbCreateNewFolder.Size = new System.Drawing.Size(279, 17);
             this.cbCreateNewFolder.TabIndex = 3;
@@ -1157,23 +1269,25 @@
             // fileToolStripMenuItem
             // 
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.exitToolStripMenuItem,
-            this.exitToolStripMenuItem1});
+            this.updateToolStripMenuItem,
+            this.exitToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.fileToolStripMenuItem.Text = "File";
             // 
+            // updateToolStripMenuItem
+            // 
+            this.updateToolStripMenuItem.Name = "updateToolStripMenuItem";
+            this.updateToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.updateToolStripMenuItem.Text = "Update";
+            this.updateToolStripMenuItem.Click += new System.EventHandler(this.updateToolStripMenuItem_Click);
+            // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
-            this.exitToolStripMenuItem.Text = "Update";
-            // 
-            // exitToolStripMenuItem1
-            // 
-            this.exitToolStripMenuItem1.Name = "exitToolStripMenuItem1";
-            this.exitToolStripMenuItem1.Size = new System.Drawing.Size(112, 22);
-            this.exitToolStripMenuItem1.Text = "Exit";
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.exitToolStripMenuItem.Text = "Exit";
+            this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
             // filterToolStripMenuItem
             // 
@@ -1190,25 +1304,6 @@
             this.resetAllFilterToolStripMenuItem.Text = "Reset All Filters";
             this.resetAllFilterToolStripMenuItem.Click += new System.EventHandler(this.resetAllFilterToolStripMenuItem_Click);
             // 
-            // toolStripSeparator2
-            // 
-            this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(190, 6);
-            // 
-            // exportSelectedRowsToolStripMenuItem
-            // 
-            this.exportSelectedRowsToolStripMenuItem.Name = "exportSelectedRowsToolStripMenuItem";
-            this.exportSelectedRowsToolStripMenuItem.Size = new System.Drawing.Size(193, 22);
-            this.exportSelectedRowsToolStripMenuItem.Text = "Export Selected Row(s)";
-            this.exportSelectedRowsToolStripMenuItem.Click += new System.EventHandler(this.exportSelectedRowsToolStripMenuItem_Click);
-            // 
-            // exportAllToolStripMenuItem
-            // 
-            this.exportAllToolStripMenuItem.Name = "exportAllToolStripMenuItem";
-            this.exportAllToolStripMenuItem.Size = new System.Drawing.Size(193, 22);
-            this.exportAllToolStripMenuItem.Text = "Export All";
-            this.exportAllToolStripMenuItem.Click += new System.EventHandler(this.exportAllToolStripMenuItem_Click);
-            // 
             // frmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1224,6 +1319,13 @@
             this.Load += new System.EventHandler(this.frmMain_Load);
             this.tabMain.ResumeLayout(false);
             this.tabPageGeneral.ResumeLayout(false);
+            this.gbChangelog.ResumeLayout(false);
+            this.gbChangelog.PerformLayout();
+            this.gbCreditsAndVersion.ResumeLayout(false);
+            this.gbCredits.ResumeLayout(false);
+            this.gbCredits.PerformLayout();
+            this.gbVersion.ResumeLayout(false);
+            this.gbVersion.PerformLayout();
             this.tabPageDownloader.ResumeLayout(false);
             this.gbInputParams.ResumeLayout(false);
             this.contextMenuStripForListBoxInput.ResumeLayout(false);
@@ -1261,8 +1363,8 @@
         private System.Windows.Forms.TabPage tabPageDownloader;
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem updateToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem1;
         private System.Windows.Forms.GroupBox gbChangelog;
         private System.Windows.Forms.TabPage tabPageSettings;
         private System.Windows.Forms.TabPage tabPageLogs;
@@ -1284,7 +1386,6 @@
         private System.Windows.Forms.Label lblThreads;
         private System.Windows.Forms.Label lblRequestTimeout;
         private System.Windows.Forms.GroupBox gbDownloadSettings;
-        private System.Windows.Forms.CheckBox cbRemoveEmoji;
         private System.Windows.Forms.CheckBox cbSaveStats;
         private System.Windows.Forms.CheckBox cbCreateNewFolder;
         private System.Windows.Forms.Button btnBrowseDownloadDirectory;
@@ -1361,6 +1462,14 @@
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
         private System.Windows.Forms.ToolStripMenuItem exportSelectedRowsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem exportAllToolStripMenuItem;
+        private System.Windows.Forms.Button btnAccountLogout;
+        private System.Windows.Forms.ToolTip inputTypeTips;
+        private System.Windows.Forms.TextBox txtChangelog;
+        private System.Windows.Forms.Label lblLatestVersion;
+        private System.Windows.Forms.Label lblCurrentVersion;
+        private System.Windows.Forms.LinkLabel linkLabel2;
+        private System.Windows.Forms.LinkLabel linkLabel1;
+        private System.Windows.Forms.GroupBox gbCreditsAndVersion;
     }
 }
 

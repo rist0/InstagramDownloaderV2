@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -19,41 +20,68 @@ namespace InstagramDownloaderV2.Forms
 {
     public partial class frmMain : Form
     {
+        #region Properties
         private CancellationTokenSource _cancellationTokenSource;
         private CancellationToken _cancellationToken;
         private ProxyObject _proxy;
         private CookieContainer _cookies;
+#endregion
 
+        #region Constructor
         public frmMain()
         {
             InitializeComponent();
             _cookies = new CookieContainer();
         }
+#endregion
 
-        #region Logs Tab Menu
-        private void btnClearLogs_Click(object sender, EventArgs e)
+        #region Menu - File
+        /// <summary>
+        /// Update the software.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void updateToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            txtLogs.Clear();
+            // TODO: Add this part later on.
+            // Process.Start("url to new version for now");
         }
 
-        private void btnExportLogs_Click(object sender, EventArgs e)
+        /// <summary>
+        /// Exit the software
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using (SaveFileDialog sfd = new SaveFileDialog
-                {
-                    Filter = @"Text files (.txt)|*.txt",
-                    Title = @"Logs Export File",
-                    RestoreDirectory = true
-                })
+            Application.Exit();
+        }
+        #endregion
+
+        #region Menu - Filters
+        // Reset all filter settings
+        private void resetAllFilterToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (!InputValidation.ConfirmUserAction(resetAllFilterToolStripMenuItem)) return;
+
+            foreach (Control c in gbMediaFilters.Controls)
             {
-                if (sfd.ShowDialog() == DialogResult.OK)
-                {
-                    File.WriteAllLines(sfd.FileName, txtLogs.Lines);
-                }
+                if (c is CheckBox cb)
+                    cb.Checked = false;
+                if (c is TextBox tb)
+                    tb.Clear();
+                if (c is ComboBox comboBox)
+                    comboBox.Text = "";
             }
         }
         #endregion
 
         #region ContextMenuStrip Events For ListView Input
+        /// <summary>
+        /// Remove selected row(s)
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void toolStripMenuItem1_Click(object sender, EventArgs e)
         {
             var selectedItems = lvInput.SelectedItems;
@@ -64,11 +92,21 @@ namespace InstagramDownloaderV2.Forms
             }
         }
 
+        /// <summary>
+        /// Remove all rows
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void toolStripMenuItem2_Click(object sender, EventArgs e)
         {
             lvInput.Items.Clear();
         }
 
+        /// <summary>
+        /// Edit selected row
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void editSelectedRowToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (lvInput.SelectedItems.Count != 1)
@@ -82,8 +120,15 @@ namespace InstagramDownloaderV2.Forms
             }
         }
 
+        /// <summary>
+        /// Export selected row(s)
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void exportSelectedRowsToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            if (!(lvInput.SelectedItems.Count > 0)) return;
+
             var output = InputValidation.ValidExportFile();
 
             if (output.Item1 == false) return;
@@ -101,8 +146,15 @@ namespace InstagramDownloaderV2.Forms
             }
         }
 
+        /// <summary>
+        /// Export all row(s)
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void exportAllToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            if (!(lvInput.Items.Count > 0)) return;
+
             var output = InputValidation.ValidExportFile();
 
             if (output.Item1 == false) return;
@@ -117,24 +169,6 @@ namespace InstagramDownloaderV2.Forms
                     row.SubItems[2].Text + Environment.NewLine;
 
                 File.AppendAllText(outputFile, fileContent);
-            }
-        }
-        #endregion
-
-        #region MenuStrip Filters
-        // Reset all filter settings
-        private void resetAllFilterToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (!InputValidation.ConfirmUserAction(resetAllFilterToolStripMenuItem)) return;
-
-            foreach (Control c in gbMediaFilters.Controls)
-            {
-                if (c is CheckBox cb)
-                    cb.Checked = false;
-                if (c is TextBox tb)
-                    tb.Clear();
-                if (c is ComboBox comboBox)
-                    comboBox.Text = "";
             }
         }
         #endregion
@@ -228,6 +262,8 @@ namespace InstagramDownloaderV2.Forms
                 SaveStatsInCsvFile = cbSaveStats.Checked
             };
 
+            if (!InputValidation.ValidateFilters(mediaFilter)) return;
+
             // Download process
             if (!InputValidation.IsDouble(txtRequestTimeout.Text)) return;
 
@@ -236,7 +272,7 @@ namespace InstagramDownloaderV2.Forms
             var requestTimeout = double.Parse(txtRequestTimeout.Text);
 
             // Initialize downloader object
-            InstagramDownload downloader = new InstagramDownload(txtUserAgent.Text, _proxy.GetWebProxy(), requestTimeout, txtDownloadFolder.Text, _cancellationToken, _cookies, txtDelimiter.Text[0]);
+            InstagramDownload downloader = new InstagramDownload(txtUserAgent.Text, _proxy.GetWebProxy(), requestTimeout, txtDownloadFolder.Text, _cancellationToken, _cookies, txtDelimiter.Text);
 
             // Set downloader properties
             downloader.IsTotalDownloadsEnabled = cbTotalDownloads.Checked;
@@ -328,7 +364,15 @@ namespace InstagramDownloaderV2.Forms
                 }
 
                 // Wait for tasks to finish
-                await Task.WhenAll(tasks); // might throw an exception if something goes wrong during tasks
+                try
+                {
+                    await Task.WhenAll(tasks); // might throw an exception if something goes wrong during tasks
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.StackTrace);
+                }
+
                 Log(@"Finished downloading.", nameof(LogType.Success));
 
                 // Update form controls when tasks are finished
@@ -364,6 +408,37 @@ namespace InstagramDownloaderV2.Forms
             {
                 txtLogs.AppendText($@"{DateTime.Now} - {logType}: {message}{Environment.NewLine}");
             });
+        }
+
+        /// <summary>
+        /// Clears all the logs
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnClearLogs_Click(object sender, EventArgs e)
+        {
+            txtLogs.Clear();
+        }
+
+        /// <summary>
+        /// Exports the logs to a file.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnExportLogs_Click(object sender, EventArgs e)
+        {
+            using (SaveFileDialog sfd = new SaveFileDialog
+            {
+                Filter = @"Text files (.txt)|*.txt",
+                Title = @"Logs Export File",
+                RestoreDirectory = true
+            })
+            {
+                if (sfd.ShowDialog() == DialogResult.OK)
+                {
+                    File.WriteAllLines(sfd.FileName, txtLogs.Lines);
+                }
+            }
         }
         #endregion
 
@@ -536,6 +611,25 @@ namespace InstagramDownloaderV2.Forms
                 lblAccountLoginStatus.ForeColor = Color.Red;
                 Log($@"Failed to log in as {txtAccountUsername.Text}.", nameof(LogType.Fail));
             }
+
+            btnAccountLogin.Enabled = false;
+            btnAccountLogout.Enabled = true;
+        }
+
+        /// <summary>
+        /// Logs out an account (sets cookies to null)
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnAccountLogout_Click(object sender, EventArgs e)
+        {
+            _cookies = null;
+            lblAccountLoginStatus.Text = @"Status: Successfully logged out.";
+            lblAccountLoginStatus.ForeColor = Color.DodgerBlue;
+            Log($@"Successfully logged out as {txtAccountUsername.Text}.", nameof(LogType.Fail));
+            txtAccountUsername.Clear();
+            txtAccountPassword.Clear();
+            btnAccountLogin.Enabled = true;
         }
 
         #endregion
@@ -577,7 +671,7 @@ namespace InstagramDownloaderV2.Forms
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void frmMain_Load(object sender, EventArgs e)
+        private async void frmMain_Load(object sender, EventArgs e)
         {
             Log(@"Successfully initialized form components and loaded software.", nameof(LogType.Success));
             try
@@ -592,7 +686,6 @@ namespace InstagramDownloaderV2.Forms
                 txtProxy.Text = settings.Proxy;
                 txtDownloadFolder.Text = !String.IsNullOrEmpty(settings.DownloadFolder) ? settings.DownloadFolder : Application.StartupPath;
                 cbCreateNewFolder.Checked = settings.CreateNewFolder;
-                cbRemoveEmoji.Checked = settings.RemoveEmoji;
                 cbSaveStats.Checked = settings.SaveStats;
                 txtDelimiter.Text = settings.Delimiter;
                 cbSkipMediaDescription.Checked = settings.SkipDescription;
@@ -607,8 +700,47 @@ namespace InstagramDownloaderV2.Forms
                 cbSkipMediaUploadDate.Checked = settings.SkipUploadDate;
                 cbTotalDownloads.Checked = settings.TotalDownloadsEnabled;
                 txtTotalDownloads.Text = settings.TotalDownloads;
+                cbSkipTopPosts.Checked = settings.SkipTopPosts;
+                txtAccountUsername.Text = settings.AccountUsername;
+                txtAccountPassword.Text = settings.AccountPassword;
+                cbHidePassword.Checked = settings.HidePassword;
+                _cookies = settings.AccountCookies;
+
+                if (_cookies != null)
+                {
+                    lblAccountLoginStatus.Text = @"Status: Successfully restored session.";
+                    lblAccountLoginStatus.ForeColor = Color.Green;
+                    Log($@"Successfully restored session as {txtAccountUsername.Text}.", nameof(LogType.Success));
+                    btnAccountLogin.Enabled = false;
+                    btnAccountLogout.Enabled = true;
+                }
+                else
+                {
+                    lblAccountLoginStatus.Text = @"Status: Failed to restore session.";
+                    lblAccountLoginStatus.ForeColor = Color.Red;
+                    Log($@"Failed to restore session as {txtAccountUsername.Text}.", nameof(LogType.Fail));
+                    btnAccountLogin.Enabled = true;
+                    btnAccountLogout.Enabled = false;
+                }
 
                 Log(@"Successfully loaded application settings.", nameof(LogType.Success));
+
+                using (Request request = new Request(txtUserAgent.Text, null, double.Parse(txtRequestTimeout.Text)))
+                {
+                    var response = await request.GetRequestResponseAsync("http://imristo.com/download/igdownloader/changelog.txt");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        txtChangelog.Text = await response.Content.ReadAsStringAsync();
+                    }
+
+                    response = await request.GetRequestResponseAsync("http://imristo.com/download/igdownloader/version.txt");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        lblLatestVersion.Text += await response.Content.ReadAsStringAsync();
+                    }
+                    lblCurrentVersion.Text += Application.ProductVersion;
+
+                }
             }
             catch (Exception ex)
             {
@@ -623,29 +755,47 @@ namespace InstagramDownloaderV2.Forms
         /// <param name="e"></param>
         private void frmMain_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Settings settings = new Settings(txtUserAgent.Text,
-                                            txtRequestTimeout.Text,
-                                            txtProxy.Text,
-                                            txtThreads.Text,
-                                            txtDownloadFolder.Text,
-                                            cbCreateNewFolder.Checked,
-                                            cbRemoveEmoji.Checked,
-                                            cbSaveStats.Checked,
-                                            txtDelimiter.Text,
-                                            cbSkipMediaDescription.Checked,
-                                            cbSkipPhotos.Checked,
-                                            cbSkipVideos.Checked,
-                                            cbSkipMediaLikes.Checked,
-                                            cbSkipMediaLikesMoreLess.Text,
-                                            txtSkipMediaLikesCount.Text,
-                                            cbSkipMediaComments.Checked,
-                                            cbSkipMediaCommentsMoreLess.Text,
-                                            txtSkipMediaCommentsCount.Text,
-                                            cbSkipMediaUploadDate.Checked,
-                                            cbTotalDownloads.Checked,
-                                            txtTotalDownloads.Text
-                                            );
+            Settings settings = new Settings
+            {
+                UserAgent = txtUserAgent.Text,
+                RequestTimeout = txtRequestTimeout.Text,
+                Proxy = txtProxy.Text,
+                Threads = txtThreads.Text,
+                DownloadFolder = txtDownloadFolder.Text,
+                CreateNewFolder = cbCreateNewFolder.Checked,
+                SaveStats = cbSaveStats.Checked,
+                Delimiter = txtDelimiter.Text,
+                SkipDescription = cbSkipMediaDescription.Checked,
+                SkipPhotos = cbSkipPhotos.Checked,
+                SkipVideos = cbSkipVideos.Checked,
+                SkipLikes = cbSkipMediaLikes.Checked,
+                SkipLikesMoreLess = cbSkipMediaLikesMoreLess.Text,
+                SkipLikesCount = txtSkipMediaLikesCount.Text,
+                SkipComments = cbSkipMediaComments.Checked,
+                SkipCommentsMoreLess = cbSkipMediaCommentsMoreLess.Text,
+                SkipCommentsCount = txtSkipMediaCommentsCount.Text,
+                SkipUploadDate = cbSkipMediaUploadDate.Checked,
+                TotalDownloadsEnabled = cbTotalDownloads.Checked,
+                TotalDownloads = txtTotalDownloads.Text,
+                SkipTopPosts = cbSkipTopPosts.Checked,
+                AccountUsername = txtAccountUsername.Text,
+                AccountPassword = txtAccountPassword.Text,
+                HidePassword = cbHidePassword.Checked,
+                AccountCookies = _cookies
+            };
             SettingsSerialization.Save(settings);
+        }
+
+        // Credits
+        private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            Process.Start("http://imristo.com");
+        }
+
+        // Credits
+        private void linkLabel2_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            Process.Start("http://smmnova.com");
         }
 
         #endregion

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using InstagramDownloaderV2.Classes.Downloader;
+using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -108,6 +110,19 @@ namespace InstagramDownloaderV2.Classes.Validation
             if (String.IsNullOrEmpty(downloadFolder) || string.IsNullOrWhiteSpace(downloadFolder)) return false;
 
             if (saveStats && (String.IsNullOrEmpty(delimiter) || String.IsNullOrWhiteSpace(delimiter))) return false;
+
+            return true;
+        }
+
+        public static bool ValidateFilters(MediaFilter mediaFilter)
+        {
+            if (mediaFilter.SkipMediaIfDescriptionContans && !(mediaFilter.DescriptionStrings.Count > 0)) return false;
+
+            if (mediaFilter.SkipMediaLikes && !(mediaFilter.SkipMediaLikesCount > 0)) return false;
+
+            if (mediaFilter.SkipMediaComments && !(mediaFilter.SkipMediaCommentsCount > 0)) return false;
+
+            if (mediaFilter.SkipMediaVideoViews && !(mediaFilter.SkipMediaVideoViewsCount > 0)) return false;
 
             return true;
         }

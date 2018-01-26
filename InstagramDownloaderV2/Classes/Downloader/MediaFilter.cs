@@ -55,7 +55,8 @@ namespace InstagramDownloaderV2.Classes.Downloader
 
             if (SkipMediaIfDescriptionContans)
             {
-                if (MediaFilterValidation.SkipMediaIfDescriptionContains(photoData.Caption.Edges[0].Node.CaptionText, DescriptionStrings)) return true;
+                if(photoData.Caption.Edges.Count > 0)
+                    if (MediaFilterValidation.SkipMediaIfDescriptionContains(photoData.Caption.Edges[0].Node.CaptionText, DescriptionStrings)) return true;
             }
 
             if (SkipMediaLikes)
@@ -147,7 +148,8 @@ namespace InstagramDownloaderV2.Classes.Downloader
 
             if (SkipMediaIfDescriptionContans)
             {
-                if (MediaFilterValidation.SkipMediaIfDescriptionContains(photoData.CaptionEdge.CaptionTextEdge[0].CaptionText.Text, DescriptionStrings)) return true;
+                if (photoData.CaptionEdge.CaptionTextEdge.Count > 0)
+                    if (MediaFilterValidation.SkipMediaIfDescriptionContains(photoData.CaptionEdge.CaptionTextEdge[0].CaptionText.Text, DescriptionStrings)) return true;
             }
 
             if (SkipMediaLikes)

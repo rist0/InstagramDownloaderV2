@@ -32,9 +32,9 @@ namespace InstagramDownloaderV2.Classes.Downloader
         private readonly JsonParser _jsonParser;
 
         // Csv Writer
-        private readonly CsvWriter _csvWriter;
+        private readonly string _delimiter;
         private readonly string _statsDirectory;
-        private readonly char _delimiter;
+        private bool _headerIsWritten; // for single Url csv header
 
         // Properties
         public InputType InputType { get; set; }
@@ -44,7 +44,7 @@ namespace InstagramDownloaderV2.Classes.Downloader
 #endregion
 
 #region Constructor
-        public InstagramDownload(string userAgent, WebProxy proxy, double requestTimeout, string downloadFolder, CancellationToken cancellationToken, CookieContainer cookies, char csvFileDelimiter)
+        public InstagramDownload(string userAgent, WebProxy proxy, double requestTimeout, string downloadFolder, CancellationToken cancellationToken, CookieContainer cookies, string csvFileDelimiter)
         {
             _downloadFolder = downloadFolder;
             _cancellationToken = cancellationToken;
@@ -57,8 +57,8 @@ namespace InstagramDownloaderV2.Classes.Downloader
 
             _jsonParser = new JsonParser(userAgent, proxy, requestTimeout, cookies);
 
+            _headerIsWritten = false;
             _delimiter = csvFileDelimiter;
-            _csvWriter = new CsvWriter(_delimiter);
             _statsDirectory = downloadFolder + @"\stats";
             if (!Directory.Exists(_statsDirectory)) Directory.CreateDirectory(_statsDirectory);
         }
@@ -93,9 +93,7 @@ namespace InstagramDownloaderV2.Classes.Downloader
             try
             {
                 string statsFile = $@"{_statsDirectory}\urls.csv";
-
-                if(!File.Exists(statsFile)) _csvWriter.WriteHeader(statsFile, false);
-
+                
                 var rootObject = await _jsonParser.GetRootObjectAsync(input, InputType.Url);
 
                 if (rootObject.MediaEntryData.MediaPostPage == null) return;
@@ -105,19 +103,6 @@ namespace InstagramDownloaderV2.Classes.Downloader
                     rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.DisplayUrl;
 
                 var mediaId = rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.MediaId;
-
-                var shortCode = rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.MediaShortCode;
-                var displayUrl = rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.DisplayUrl;
-                var captionText = rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.Caption.Edges[0].Node.CaptionText.Replace('\n', ' ');
-                var likes = rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.Likes.Count;
-                var comments = rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.Comments.Count;
-                var isVideo = rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.IsVideo;
-                var videoViews = rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.VideoViewCount;
-                var commentsDisabled = rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.CommentsDisabled;
-                var uploadDate = DateTimeOffset.FromUnixTimeSeconds(rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.UploadTimestamp).ToLocalTime();
-                var dimensions =
-                    $"W:{rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.MediaDimensions.Width} " +
-                    $"H:{rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.MediaDimensions.Height}";
 
                 string extension;
                 switch (rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.MediaType)
@@ -139,37 +124,28 @@ namespace InstagramDownloaderV2.Classes.Downloader
 
                 if (!mediaFilter.CheckAllPhotoFilters(rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails))
                 {
-                    if (IsTotalDownloadsEnabled)
+                    if (!IsTotalDownloadsEnabled)
+                    {
+                        await DownloadPhotoAsync(_downloadFolder, mediaId, extension, downloadLink);
+                    }
+                    else
                     {
                         if (_totalCount++ < TotalDownloads)
                         {
                             await DownloadPhotoAsync(_downloadFolder, mediaId, extension, downloadLink);
                         }
                     }
-                    else
-                    {
-                        await DownloadPhotoAsync(_downloadFolder, mediaId, extension, downloadLink);
-                    }
                 }
 
                 if (mediaFilter.SaveStatsInCsvFile)
                 {
-                    string[] fileContent =
+                    Console.WriteLine(!_headerIsWritten);
+                    using (var csvWriter = new Csv(statsFile, _delimiter, !_headerIsWritten))
                     {
-                        "\"" + $"{mediaId}.{extension}" + "\"" + _delimiter +
-                        "\"" + shortCode + "\"" + _delimiter +
-                        "\"" + displayUrl + "\"" + _delimiter +
-                        "\"" + mediaId + "\"" + _delimiter +
-                        "\"" + dimensions + "\"" + _delimiter +
-                        "\"" + captionText + "\"" + _delimiter +
-                        "\"" + likes + "\"" + _delimiter +
-                        "\"" + comments + "\"" + _delimiter +
-                        "\"" + commentsDisabled + "\"" + _delimiter +
-                        "\"" + isVideo + "\"" + _delimiter +
-                        "\"" + videoViews + "\"" + _delimiter +
-                        "\"" + uploadDate +"\""
-                    };
-                    _csvWriter.Write(statsFile, fileContent);
+                        await csvWriter.WriteContent(rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails);
+                        _headerIsWritten = true;
+                    }
+                        
                 }
             }
             catch (Exception)
@@ -183,14 +159,12 @@ namespace InstagramDownloaderV2.Classes.Downloader
         {
             var maxId = "";
             var hasNextPage = true;
-            int downloadCount = 0;
+            var downloadCount = 0;
 
-            string downloadFolder = mediaFilter.CustomFolder ? $@"{_downloadFolder}\{input}" : _downloadFolder;
-            string statsFile = $@"{_statsDirectory}\{input}.csv";
+            var downloadFolder = mediaFilter.CustomFolder ? $@"{_downloadFolder}\{input}" : _downloadFolder;
+            var statsFile = $@"{_statsDirectory}\{input}.csv";
 
-            if(mediaFilter.SaveStatsInCsvFile)
-                if (!File.Exists(statsFile)) _csvWriter.WriteHeader(statsFile, false);
-
+            using(var csvWriter = new Csv(statsFile, _delimiter))
             while (hasNextPage)
             {
                 var rootObject = await _jsonParser.GetRootObjectAsync(input, InputType.Username, maxId);
@@ -220,88 +194,19 @@ namespace InstagramDownloaderV2.Classes.Downloader
                             extension = "mp4";
                         }
 
-                        var shortCode = node.ShortCode;
-                        var displayUrl = node.DisplaySrc;
-                        var captionText = node.Caption?.Replace('\n', ' ') ?? string.Empty;
-                        var likes = node.Likes.Count;
-                        var comments = node.Comments.Count;
-                        var isVideo = node.IsVideo;
-                        var videoViews = node.VideoViews;
-                        var commentsDisabled = node.CommentsDisabled;
-                        var uploadDate = DateTimeOffset.FromUnixTimeSeconds(node.Date).ToLocalTime();
-                        var dimensions =
-                            $"W:{node.Dimensions.Width} " +
-                            $"H:{node.Dimensions.Height}";
-
                         _cancellationToken.ThrowIfCancellationRequested();
 
-                        if (!mediaFilter.CheckAllUsernameFilters(node))
-                        {
-                            if (IsTotalDownloadsEnabled)
-                            {
-                                if (_totalCount++ < TotalDownloads)
-                                {
-                                    if (downloadLimit != 0)
-                                    {
-                                        if (downloadCount < downloadLimit)
-                                        {
-                                            downloadCount++;
-                                            await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-                                        }
-                                        else
-                                        {
-                                            return;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-                                    }
-                                }
-                                else
-                                {
-                                    return;
-                                }
-                            }
-                            else
-                            {
-                                if (downloadLimit != 0)
-                                {
-                                    if (downloadCount < downloadLimit)
-                                    {
-                                        downloadCount++;
-                                        await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-                                    }
-                                    else
-                                    {
-                                        return;
-                                    }
-                                }
-                                else
-                                {
-                                    await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-                                }
-                            }
-                        }
+                        if (mediaFilter.CheckAllUsernameFilters(node)) continue;
+                        if (!CheckDownloads(downloadCount, downloadLimit)) return;
+
+                        _totalCount++;
+                        downloadCount++;
+
+                        await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
 
                         if (mediaFilter.SaveStatsInCsvFile)
                         {
-                            string[] fileContent =
-                            {
-                                "\"" + $"{mediaId}.{extension}" + "\"" + _delimiter +
-                                "\"" + shortCode + "\"" + _delimiter +
-                                "\"" + displayUrl + "\"" + _delimiter +
-                                "\"" + mediaId + "\"" + _delimiter +
-                                "\"" + dimensions + "\"" + _delimiter +
-                                "\"" + captionText + "\"" + _delimiter +
-                                "\"" + likes + "\"" + _delimiter +
-                                "\"" + comments + "\"" + _delimiter +
-                                "\"" + commentsDisabled + "\"" + _delimiter +
-                                "\"" + isVideo + "\"" + _delimiter +
-                                "\"" + videoViews + "\"" + _delimiter +
-                                "\"" + uploadDate +"\""
-                            };
-                            _csvWriter.Write(statsFile, fileContent);
+                            await csvWriter.WriteContent(node);
                         }
                     }
                 }
@@ -313,6 +218,7 @@ namespace InstagramDownloaderV2.Classes.Downloader
             int downloadCount = 0;
             string statsFile = $@"{_statsDirectory}\{input}.csv";
 
+            using (var csvWriter = new Csv(statsFile, _delimiter))
             foreach (EdgeHashtagToMediaEdge edge in edges)
             {
                 string mediaId = edge.Node.Id;
@@ -334,88 +240,20 @@ namespace InstagramDownloaderV2.Classes.Downloader
                     extension = "mp4";
                 }
 
-                var shortCode = edge.Node.Shortcode;
-                var displayUrl = edge.Node.DisplayUrl;
-                var captionText = edge.Node.CaptionEdge.CaptionTextEdge.Count > 0 ? 
-                    edge.Node.CaptionEdge.CaptionTextEdge[0].CaptionText.Text.Replace('\n', ' ') : string.Empty;
-                var likes = edge.Node.Likes.Count;
-                var comments = edge.Node.Comments.Count;
-                var isVideo = edge.Node.IsVideo;
-                var videoViews = edge.Node.VideoViewCount;
-                var commentsDisabled = edge.Node.CommentsDisabled;
-                var uploadDate = DateTimeOffset.FromUnixTimeSeconds(edge.Node.TakenAtTimestamp).ToLocalTime();
-                var dimensions =
-                    $"W:{edge.Node.Dimensions.Width} " +
-                    $"H:{edge.Node.Dimensions.Height}";
-
                 _cancellationToken.ThrowIfCancellationRequested();
 
                 if (!mediaFilter.CheckAllHashtagFilters(edge.Node))
                 {
-                    if (IsTotalDownloadsEnabled)
-                    {
-                        if (_totalCount++ < TotalDownloads)
-                        {
-                            if (downloadLimit != 0)
-                            {
-                                if (downloadCount < downloadLimit)
-                                {
-                                    downloadCount++;
-                                    await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-                                }
-                                else
-                                {
-                                    return downloadCount;
-                                }
-                            }
-                            else
-                            {
-                                await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-                            }
-                        }
-                        else
-                        {
-                            return downloadCount;
-                        }
-                    }
-                    else
-                    {
-                        if (downloadLimit != 0)
-                        {
-                            if (downloadCount < downloadLimit)
-                            {
-                                downloadCount++;
-                                await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-                            }
-                            else
-                            {
-                                return downloadCount;
-                            }
-                        }
-                        else
-                        {
-                            await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-                        }
-                    }
+                    if (!CheckDownloads(downloadCount, downloadLimit)) return 0;
 
+                    _totalCount++;
+                    downloadCount++;
+
+                    await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
+                    
                     if (mediaFilter.SaveStatsInCsvFile)
                     {
-                        string[] fileContent =
-                        {
-                            "\"" + $"{mediaId}.{extension}" + "\"" + _delimiter +
-                            "\"" + shortCode + "\"" + _delimiter +
-                            "\"" + displayUrl + "\"" + _delimiter +
-                            "\"" + mediaId + "\"" + _delimiter +
-                            "\"" + dimensions + "\"" + _delimiter +
-                            "\"" + captionText + "\"" + _delimiter +
-                            "\"" + likes + "\"" + _delimiter +
-                            "\"" + comments + "\"" + _delimiter +
-                            "\"" + commentsDisabled + "\"" + _delimiter +
-                            "\"" + isVideo + "\"" + _delimiter +
-                            "\"" + videoViews + "\"" + _delimiter +
-                            "\"" + uploadDate +"\""
-                        };
-                        _csvWriter.Write(statsFile, fileContent);
+                        await csvWriter.WriteContent(edge);
                     }
                 }
             }
@@ -425,15 +263,11 @@ namespace InstagramDownloaderV2.Classes.Downloader
 
         private async Task DownloadHashtagPhotosAsync(string input, MediaFilter mediaFilter, int downloadLimit)
         {
-            string maxId = "";
-            bool hasNextPage;
-            int downloadCount = 0;
+            var maxId = "";
+            var downloadCount = 0;
 
-            string downloadFolder = mediaFilter.CustomFolder ? $@"{_downloadFolder}\{input}" : _downloadFolder;
-            string statsFile = $@"{_statsDirectory}\{input}.csv";
-
-            if (mediaFilter.SaveStatsInCsvFile)
-                if (!File.Exists(statsFile)) _csvWriter.WriteHeader(statsFile, false);
+            var downloadFolder = mediaFilter.CustomFolder ? $@"{_downloadFolder}\{input}" : _downloadFolder;
+            var statsFile = $@"{_statsDirectory}\{input}.csv";
 
             var rootObject = await _jsonParser.GetRootObjectAsync(input, InputType.Hashtag, maxId);
             if (rootObject.MediaEntryData.HashtagPage == null) return;
@@ -443,119 +277,55 @@ namespace InstagramDownloaderV2.Classes.Downloader
                 downloadCount = await DownloadHashtagTopPhotosAsync(input, rootObject.MediaEntryData.HashtagPage[0].GraphMedia.Hashtag.EdgeHashtagToTopPosts.Edges, mediaFilter, downloadLimit, downloadFolder);
             }
 
-            do
+            using (var csvWriter = new Csv(statsFile, _delimiter, mediaFilter.SkipTopPosts))
             {
-                maxId = rootObject.MediaEntryData.HashtagPage[0].GraphMedia.Hashtag.EdgeHashtagToMedia.PageInfo.EndCursor;
-                hasNextPage = rootObject.MediaEntryData.HashtagPage[0].GraphMedia.Hashtag.EdgeHashtagToMedia.PageInfo.HasNextPage;
-
-                foreach (EdgeHashtagToMediaEdge edge in rootObject.MediaEntryData.HashtagPage[0].GraphMedia.Hashtag.EdgeHashtagToMedia.Edges)
+                bool hasNextPage;
+                do
                 {
-                    string mediaId = edge.Node.Id;
+                    maxId = rootObject.MediaEntryData.HashtagPage[0].GraphMedia.Hashtag.EdgeHashtagToMedia.PageInfo.EndCursor;
+                    hasNextPage = rootObject.MediaEntryData.HashtagPage[0].GraphMedia.Hashtag.EdgeHashtagToMedia.PageInfo.HasNextPage;
 
-                    string extension;
-                    string downloadLink;
-                    if (!edge.Node.IsVideo)
+                    foreach (EdgeHashtagToMediaEdge edge in rootObject.MediaEntryData.HashtagPage[0].GraphMedia.Hashtag.EdgeHashtagToMedia.Edges)
                     {
-                        downloadLink = edge.Node.DisplayUrl;
-                        extension = "jpg";
-                    }
-                    else
-                    {
-                        RootObject videoDetails = await _jsonParser.GetRootObjectAsync($@"{Globals.BASE_URL}/p/{edge.Node.Shortcode}/", InputType.Url);
-                        if (videoDetails.MediaEntryData.MediaPostPage == null) return;
+                        string mediaId = edge.Node.Id;
 
-                        downloadLink = videoDetails.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.VideoUrl;
-                        extension = "mp4";
-                    }
-
-                    var shortCode = edge.Node.Shortcode;
-                    var displayUrl = edge.Node.DisplayUrl;
-                    var captionText = edge.Node.CaptionEdge.CaptionTextEdge.Count > 0 ? 
-                        edge.Node.CaptionEdge.CaptionTextEdge[0].CaptionText.Text.Replace('\n', ' ') : string.Empty;
-                    var likes = edge.Node.Likes.Count;
-                    var comments = edge.Node.Comments.Count;
-                    var isVideo = edge.Node.IsVideo;
-                    var videoViews = edge.Node.VideoViewCount;
-                    var commentsDisabled = edge.Node.CommentsDisabled;
-                    var uploadDate = DateTimeOffset.FromUnixTimeSeconds(edge.Node.TakenAtTimestamp).ToLocalTime();
-                    var dimensions =
-                        $"W:{edge.Node.Dimensions.Width} " +
-                        $"H:{edge.Node.Dimensions.Height}";
-
-                    _cancellationToken.ThrowIfCancellationRequested();
-
-                    if (!mediaFilter.CheckAllHashtagFilters(edge.Node))
-                    {
-                        if (IsTotalDownloadsEnabled)
+                        string extension;
+                        string downloadLink;
+                        if (!edge.Node.IsVideo)
                         {
-                            if (_totalCount++ < TotalDownloads)
-                            {
-                                if (downloadLimit != 0)
-                                {
-                                    if (downloadCount < downloadLimit)
-                                    {
-                                        downloadCount++;
-                                        await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-                                    }
-                                    else
-                                    {
-                                        return;
-                                    }
-                                }
-                                else
-                                {
-                                    await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-                                }
-                            }
-                            else
-                            {
-                                return;
-                            }
+                            downloadLink = edge.Node.DisplayUrl;
+                            extension = "jpg";
                         }
                         else
                         {
-                            if (downloadLimit != 0)
-                            {
-                                if (downloadCount < downloadLimit)
-                                {
-                                    downloadCount++;
-                                    await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-                                }
-                                else
-                                {
-                                    return;
-                                }
-                            }
-                            else
-                            {
-                                await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-                            }
+                            RootObject videoDetails = await _jsonParser.GetRootObjectAsync($@"{Globals.BASE_URL}/p/{edge.Node.Shortcode}/", InputType.Url);
+                            if (videoDetails.MediaEntryData.MediaPostPage == null) return;
+
+                            downloadLink = videoDetails.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.VideoUrl;
+                            extension = "mp4";
                         }
 
-                        if (mediaFilter.SaveStatsInCsvFile)
+                        _cancellationToken.ThrowIfCancellationRequested();
+
+                        if (!mediaFilter.CheckAllHashtagFilters(edge.Node))
                         {
-                            string[] fileContent =
+                            if (!CheckDownloads(downloadCount, downloadLimit)) return;
+
+                            _totalCount++;
+                            downloadCount++;
+
+                            await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
+
+                            if (mediaFilter.SaveStatsInCsvFile)
                             {
-                                "\"" + $"{mediaId}.{extension}" + "\"" + _delimiter +
-                                "\"" + shortCode + "\"" + _delimiter +
-                                "\"" + displayUrl + "\"" + _delimiter +
-                                "\"" + mediaId + "\"" + _delimiter +
-                                "\"" + dimensions + "\"" + _delimiter +
-                                "\"" + captionText + "\"" + _delimiter +
-                                "\"" + likes + "\"" + _delimiter +
-                                "\"" + comments + "\"" + _delimiter +
-                                "\"" + commentsDisabled + "\"" + _delimiter +
-                                "\"" + isVideo + "\"" + _delimiter +
-                                "\"" + videoViews + "\"" + _delimiter +
-                                "\"" + uploadDate +"\""
-                            };
-                            _csvWriter.Write(statsFile, fileContent);
+                                await csvWriter.WriteContent(edge);
+                            }
                         }
                     }
-                }
 
-                rootObject = await _jsonParser.GetRootObjectAsync(input, InputType.Hashtag, maxId);
-            } while (hasNextPage);
+                    rootObject = await _jsonParser.GetRootObjectAsync(input, InputType.Hashtag, maxId);
+                } while (hasNextPage);
+            }
         }
 
         private async Task<int> DownloadLocationTopPhotosAsync(string input, List<UserPhotoData> edges, MediaFilter mediaFilter, int downloadLimit, string downloadFolder)
@@ -563,6 +333,7 @@ namespace InstagramDownloaderV2.Classes.Downloader
             int downloadCount = 0;
             string statsFile = $@"{_statsDirectory}\{input}.csv";
 
+            using (var csvWriter = new Csv(statsFile, _delimiter))
             foreach (UserPhotoData data in edges)
             {
                 string mediaId = data.Id;
@@ -584,86 +355,20 @@ namespace InstagramDownloaderV2.Classes.Downloader
                     extension = "mp4";
                 }
 
-                var shortCode = data.ShortCode;
-                var displayUrl = data.DisplaySrc;
-                var captionText = data.Caption?.Replace('\n', ' ') ?? string.Empty;
-                var likes = data.Likes.Count;
-                var comments = data.Comments.Count;
-                var isVideo = data.IsVideo;
-                var videoViews = data.VideoViews;
-                var commentsDisabled = data.CommentsDisabled;
-                var uploadDate = DateTimeOffset.FromUnixTimeSeconds(data.Date).ToLocalTime();
-                var dimensions =
-                    $"W:{data.Dimensions.Width} " +
-                    $"H:{data.Dimensions.Height}";
-
                 _cancellationToken.ThrowIfCancellationRequested();
 
                 if (!mediaFilter.CheckAllUsernameFilters(data))
                 {
-                    if (IsTotalDownloadsEnabled)
-                    {
-                        if (_totalCount++ < TotalDownloads)
-                        {
-                            if (downloadLimit != 0)
-                            {
-                                if (downloadCount < downloadLimit)
-                                {
-                                    downloadCount++;
-                                    await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-                                }
-                                else
-                                {
-                                    return downloadCount;
-                                }
-                            }
-                            else
-                            {
-                                await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-                            }
-                        }
-                        else
-                        {
-                            return downloadCount;
-                        }
-                    }
-                    else
-                    {
-                        if (downloadLimit != 0)
-                        {
-                            if (downloadCount < downloadLimit)
-                            {
-                                downloadCount++;
-                                await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-                            }
-                            else
-                            {
-                                return downloadCount;
-                            }
-                        }
-                        else
-                        {
-                            await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-                        }
-                    }
+                    if (!CheckDownloads(downloadCount, downloadLimit)) return 0;
+
+                    _totalCount++;
+                    downloadCount++;
+
+                    await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
+
                     if (mediaFilter.SaveStatsInCsvFile)
                     {
-                        string[] fileContent =
-                        {
-                            "\"" + $"{mediaId}.{extension}" + "\"" + _delimiter +
-                            "\"" + shortCode + "\"" + _delimiter +
-                            "\"" + displayUrl + "\"" + _delimiter +
-                            "\"" + mediaId + "\"" + _delimiter +
-                            "\"" + dimensions + "\"" + _delimiter +
-                            "\"" + captionText + "\"" + _delimiter +
-                            "\"" + likes + "\"" + _delimiter +
-                            "\"" + comments + "\"" + _delimiter +
-                            "\"" + commentsDisabled + "\"" + _delimiter +
-                            "\"" + isVideo + "\"" + _delimiter +
-                            "\"" + videoViews + "\"" + _delimiter +
-                            "\"" + uploadDate +"\""
-                        };
-                        _csvWriter.Write(statsFile, fileContent);
+                        await csvWriter.WriteContent(data);
                     }
                 }
             }
@@ -674,14 +379,11 @@ namespace InstagramDownloaderV2.Classes.Downloader
         private async Task DownloadLocationPhotosAsync(string input, MediaFilter mediaFilter, int downloadLimit)
         {
             var maxId = "";
-            var hasNextPage = true;
             int downloadCount = 0;
 
             string downloadFolder = mediaFilter.CustomFolder ? $@"{_downloadFolder}\{input}" : _downloadFolder;
             string statsFile = $@"{_statsDirectory}\{input}.csv";
-
-            if (mediaFilter.SaveStatsInCsvFile)
-                if (!File.Exists(statsFile)) _csvWriter.WriteHeader(statsFile, false);
+            
 
             var rootObject = await _jsonParser.GetRootObjectAsync(input, InputType.Location, maxId);
             if (rootObject.MediaEntryData.LocationsPage == null) return;
@@ -691,115 +393,52 @@ namespace InstagramDownloaderV2.Classes.Downloader
                 downloadCount = await DownloadLocationTopPhotosAsync(input, rootObject.MediaEntryData.LocationsPage[0].Location.TopPosts.Nodes, mediaFilter, downloadLimit, downloadFolder);
             }
 
-            while (hasNextPage)
+            using (var csvWriter = new Csv(statsFile, _delimiter, mediaFilter.SkipTopPosts))
             {
-                rootObject = await _jsonParser.GetRootObjectAsync(input, InputType.Location, maxId);
-
-                maxId = rootObject.MediaEntryData.LocationsPage[0].Location.Media.PageInfo.EndCursor;
-                hasNextPage = rootObject.MediaEntryData.LocationsPage[0].Location.Media.PageInfo.HasNextPage;
-
-                foreach (UserPhotoData data in rootObject.MediaEntryData.LocationsPage[0].Location.Media.Nodes)
+                bool hasNextPage;
+                do
                 {
-                    string mediaId = data.Id;
+                    rootObject = await _jsonParser.GetRootObjectAsync(input, InputType.Location, maxId);
 
-                    string extension;
-                    string downloadLink;
-                    if (!data.IsVideo)
+                    maxId = rootObject.MediaEntryData.LocationsPage[0].Location.Media.PageInfo.EndCursor;
+                    hasNextPage = rootObject.MediaEntryData.LocationsPage[0].Location.Media.PageInfo.HasNextPage;
+
+                    foreach (UserPhotoData data in rootObject.MediaEntryData.LocationsPage[0].Location.Media.Nodes)
                     {
-                        downloadLink = data.DisplaySrc;
-                        extension = "jpg";
-                    }
-                    else
-                    {
-                        RootObject videoDetails = await _jsonParser.GetRootObjectAsync($@"{Globals.BASE_URL}/p/{data.ShortCode}/", InputType.Url);
-                        downloadLink = videoDetails.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.VideoUrl;
-                        extension = "mp4";
-                    }
+                        string mediaId = data.Id;
 
-                    var shortCode = data.ShortCode;
-                    var displayUrl = data.DisplaySrc;
-                    var captionText = data.Caption?.Replace('\n', ' ') ?? string.Empty;
-                    var likes = data.Likes.Count;
-                    var comments = data.Comments.Count;
-                    var isVideo = data.IsVideo;
-                    var videoViews = data.VideoViews;
-                    var commentsDisabled = data.CommentsDisabled;
-                    var uploadDate = DateTimeOffset.FromUnixTimeSeconds(data.Date).ToLocalTime();
-                    var dimensions =
-                        $"W:{data.Dimensions.Width} " +
-                        $"H:{data.Dimensions.Height}";
-
-                    _cancellationToken.ThrowIfCancellationRequested();
-
-                    if (!mediaFilter.CheckAllUsernameFilters(data))
-                    {
-                        if (IsTotalDownloadsEnabled)
+                        string extension;
+                        string downloadLink;
+                        if (!data.IsVideo)
                         {
-                            if (_totalCount++ < TotalDownloads)
-                            {
-                                if (downloadLimit != 0)
-                                {
-                                    if (downloadCount < downloadLimit)
-                                    {
-                                        downloadCount++;
-                                        await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-                                    }
-                                    else
-                                    {
-                                        return;
-                                    }
-                                }
-                                else
-                                {
-                                    await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-                                }
-                            }
-                            else
-                            {
-                                return;
-                            }
+                            downloadLink = data.DisplaySrc;
+                            extension = "jpg";
                         }
                         else
                         {
-                            if (downloadLimit != 0)
-                            {
-                                if (downloadCount < downloadLimit)
-                                {
-                                    downloadCount++;
-                                    await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-                                }
-                                else
-                                {
-                                    return;
-                                }
-                            }
-                            else
-                            {
-                                await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-                            }
+                            RootObject videoDetails = await _jsonParser.GetRootObjectAsync($@"{Globals.BASE_URL}/p/{data.ShortCode}/", InputType.Url);
+                            downloadLink = videoDetails.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.VideoUrl;
+                            extension = "mp4";
                         }
 
-                        if (mediaFilter.SaveStatsInCsvFile)
+                        _cancellationToken.ThrowIfCancellationRequested();
+
+                        if (!mediaFilter.CheckAllUsernameFilters(data))
                         {
-                            string[] fileContent =
+                            if (!CheckDownloads(downloadCount, downloadLimit)) return;
+
+                            _totalCount++;
+                            downloadCount++;
+
+                            await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
+
+                            if (mediaFilter.SaveStatsInCsvFile)
                             {
-                                "\"" + $"{mediaId}.{extension}" + "\"" + _delimiter +
-                                "\"" + shortCode + "\"" + _delimiter +
-                                "\"" + displayUrl + "\"" + _delimiter +
-                                "\"" + mediaId + "\"" + _delimiter +
-                                "\"" + dimensions + "\"" + _delimiter +
-                                "\"" + captionText + "\"" + _delimiter +
-                                "\"" + likes + "\"" + _delimiter +
-                                "\"" + comments + "\"" + _delimiter +
-                                "\"" + commentsDisabled + "\"" + _delimiter +
-                                "\"" + isVideo + "\"" + _delimiter +
-                                "\"" + videoViews + "\"" + _delimiter +
-                                "\"" + uploadDate +"\""
-                            };
-                            _csvWriter.Write(statsFile, fileContent);
+                                await csvWriter.WriteContent(data);
+                            }
                         }
                     }
-                }
+                } while (hasNextPage);
             }
         }
         
@@ -817,8 +456,8 @@ namespace InstagramDownloaderV2.Classes.Downloader
                         using (FileStream fs = File.Open($@"{directoryPath}\{fileName}.{extension}", FileMode.Create))
                         {
                             byte[] bytes = await msg.Content.ReadAsByteArrayAsync();
-                            await fs.WriteAsync(bytes, 0, bytes.Length);
-                            //await msg.Content.CopyToAsync(fs);
+                            //await fs.WriteAsync(bytes, 0, bytes.Length);
+                            await msg.Content.CopyToAsync(fs);
                         }
                     }
                     else
@@ -829,10 +468,49 @@ namespace InstagramDownloaderV2.Classes.Downloader
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine(@"Method: {0}, Error: {1}", @"DownloadPhotoAsync", ex.Message);
             }
         }
-#endregion
+
+        private bool CheckDownloads(int downloadCount, int downloadLimit)
+        {
+            if (IsTotalDownloadsEnabled)
+            {
+                if (_totalCount < TotalDownloads)
+                {
+                    if (downloadLimit != 0)
+                    {
+                        if (downloadCount < downloadLimit)
+                        {
+                            return true;
+                        }
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            if (downloadLimit != 0)
+            {
+                if (downloadCount < downloadLimit)
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                return true;
+            }
+
+            return false;
+        }
+        #endregion
 
     }
 }
