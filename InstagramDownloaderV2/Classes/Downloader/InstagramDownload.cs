@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using InstagramDownloaderV2.Classes.CSV;
 using InstagramDownloaderV2.Classes.Objects.JsonObjects;
 using InstagramDownloaderV2.Classes.Objects.OtherObjects;
@@ -58,7 +59,7 @@ namespace InstagramDownloaderV2.Classes.Downloader
             _jsonParser = new JsonParser(userAgent, proxy, requestTimeout, cookies);
 
             _headerIsWritten = false;
-            _delimiter = csvFileDelimiter;
+            _delimiter = !String.IsNullOrEmpty(csvFileDelimiter) ? csvFileDelimiter : ",";
             _statsDirectory = downloadFolder + @"\stats";
             if (!Directory.Exists(_statsDirectory)) Directory.CreateDirectory(_statsDirectory);
         }
@@ -455,7 +456,7 @@ namespace InstagramDownloaderV2.Classes.Downloader
                     {
                         using (FileStream fs = File.Open($@"{directoryPath}\{fileName}.{extension}", FileMode.Create))
                         {
-                            byte[] bytes = await msg.Content.ReadAsByteArrayAsync();
+                            //byte[] bytes = await msg.Content.ReadAsByteArrayAsync();
                             //await fs.WriteAsync(bytes, 0, bytes.Length);
                             await msg.Content.CopyToAsync(fs);
                         }

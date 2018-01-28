@@ -13,7 +13,6 @@ using InstagramDownloaderV2.Classes.Objects.OtherObjects;
 using InstagramDownloaderV2.Classes.Requests;
 using InstagramDownloaderV2.Classes.Settings;
 using InstagramDownloaderV2.Classes.Validation;
-using InstagramDownloaderV2.Classes.WorkClasses;
 using InstagramDownloaderV2.Enums;
 
 namespace InstagramDownloaderV2.Forms
@@ -31,7 +30,7 @@ namespace InstagramDownloaderV2.Forms
         public frmMain()
         {
             InitializeComponent();
-            _cookies = new CookieContainer();
+            _cookies = null;
         }
 #endregion
 
@@ -591,8 +590,7 @@ namespace InstagramDownloaderV2.Forms
             _proxy = new ProxyObject(txtProxy.Text, ':');
 
             // Account initialization
-            InstagramAccount instagramAccount =
-                new InstagramAccount(txtAccountUsername.Text, txtAccountPassword.Text, _proxy.GetWebProxy());
+            var instagramAccount = new InstagramAccount(txtAccountUsername.Text, txtAccountPassword.Text, _proxy.GetWebProxy());
 
             // Login object initialization
             var instagramLogin = new InstagramLogin(instagramAccount, txtUserAgent.Text, double.Parse(txtRequestTimeout.Text));

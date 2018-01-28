@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using InstagramDownloaderV2.Classes.Objects.OtherObjects;
 
-namespace InstagramDownloaderV2.Classes.WorkClasses
+namespace InstagramDownloaderV2.Classes.Downloader
 {
     class InstagramLogin
     {
@@ -33,8 +33,8 @@ namespace InstagramDownloaderV2.Classes.WorkClasses
                     client.DefaultRequestHeaders.Add("User-Agent", _userAgent);
 
                     var response = await client.GetStringAsync("https://www.instagram.com/");
-                    string csrfToken = Regex.Match(response, "csrf_token\": \"(.*?)\"").Groups[1].Value;
-                    Console.WriteLine(csrfToken);
+                    var csrfToken = Regex.Match(response, "csrf_token\": \"(.*?)\"").Groups[1].Value;
+                    //Console.WriteLine(csrfToken);
 
                     client.DefaultRequestHeaders.Host = "www.instagram.com";
                     client.DefaultRequestHeaders.Add("Connection", "keep-alive");

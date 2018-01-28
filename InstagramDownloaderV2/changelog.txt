@@ -1,4 +1,8 @@
-﻿2.0.0.0
+﻿2.0.0.1
+- Fixed an issue causing the software not to start if there was no delimiter for csv (even though option wasn't enabled)
+- Fixed an issue with restoring session showing the wrong value
+
+2.0.0.0
 [New]
 - Removed PRO version completely, software is fully-free now
 - Added support for multiple inputs
