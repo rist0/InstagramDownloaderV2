@@ -30,7 +30,7 @@ namespace InstagramDownloaderV2.Forms
         public frmMain()
         {
             InitializeComponent();
-            _cookies = null;
+            //_cookies = null;
         }
 #endregion
 
