@@ -1,4 +1,8 @@
-﻿2.0.0.1
+﻿2.0.0.2
+- Fixed an issue with default settings not applying if settings file doesn't exist
+- Fixed an issue with changelog/version not loading if settings file doesn't exist
+
+2.0.0.1
 - Fixed an issue causing the software not to start if there was no delimiter for csv (even though option wasn't enabled)
 - Fixed an issue with restoring session showing the wrong value
 

@@ -676,7 +676,7 @@ namespace InstagramDownloaderV2.Forms
             {
                 Log(@"Attempting to load application settings...", nameof(LogType.Info));
 
-                Settings settings = SettingsSerialization.Load();
+                var settings = SettingsSerialization.Load();
 
                 txtUserAgent.Text = !String.IsNullOrEmpty(settings.UserAgent) ? settings.UserAgent : UserAgentGenerator.Generate();
                 txtRequestTimeout.Text = !String.IsNullOrEmpty(settings.RequestTimeout) ? settings.RequestTimeout : "150";
@@ -722,27 +722,31 @@ namespace InstagramDownloaderV2.Forms
                 }
 
                 Log(@"Successfully loaded application settings.", nameof(LogType.Success));
-
-                using (Request request = new Request(txtUserAgent.Text, null, double.Parse(txtRequestTimeout.Text)))
-                {
-                    var response = await request.GetRequestResponseAsync("http://imristo.com/download/igdownloader/changelog.txt");
-                    if (response.IsSuccessStatusCode)
-                    {
-                        txtChangelog.Text = await response.Content.ReadAsStringAsync();
-                    }
-
-                    response = await request.GetRequestResponseAsync("http://imristo.com/download/igdownloader/version.txt");
-                    if (response.IsSuccessStatusCode)
-                    {
-                        lblLatestVersion.Text += await response.Content.ReadAsStringAsync();
-                    }
-                    lblCurrentVersion.Text += Application.ProductVersion;
-
-                }
             }
             catch (Exception ex)
             {
+                txtUserAgent.Text = UserAgentGenerator.Generate();
+                txtRequestTimeout.Text = @"150";
+                txtThreads.Text = @"1";
+                txtDownloadFolder.Text = Application.StartupPath;
                 Log(ex.Message, nameof(LogType.Error));
+            }
+
+            using (var request = new Request(txtUserAgent.Text, null, double.Parse(txtRequestTimeout.Text)))
+            {
+                var response = await request.GetRequestResponseAsync("http://imristo.com/download/igdownloader/changelog.txt");
+                if (response.IsSuccessStatusCode)
+                {
+                    txtChangelog.Text = await response.Content.ReadAsStringAsync();
+                }
+
+                response = await request.GetRequestResponseAsync("http://imristo.com/download/igdownloader/version.txt");
+                if (response.IsSuccessStatusCode)
+                {
+                    lblLatestVersion.Text += await response.Content.ReadAsStringAsync();
+                }
+                lblCurrentVersion.Text += Application.ProductVersion;
+
             }
         }
 
