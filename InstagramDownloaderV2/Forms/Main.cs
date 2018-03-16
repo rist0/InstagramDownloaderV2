@@ -233,12 +233,9 @@ namespace InstagramDownloaderV2.Forms
 
             // Filters initialization
             var descriptionStrings = new List<string>();
-            foreach (string s in txtSkipDescriptionStrings.Lines)
-            {
-                descriptionStrings.Add(s);
-            }
+            descriptionStrings.AddRange(txtSkipDescriptionStrings.Lines);
 
-            MediaFilter mediaFilter = new MediaFilter
+            var mediaFilter = new MediaFilter
             {
                 SkipTopPosts = cbSkipTopPosts.Checked,
                 SkipMediaIfVideo = cbSkipVideos.Checked,
@@ -271,10 +268,13 @@ namespace InstagramDownloaderV2.Forms
             var requestTimeout = double.Parse(txtRequestTimeout.Text);
 
             // Initialize downloader object
-            InstagramDownload downloader = new InstagramDownload(txtUserAgent.Text, _proxy.GetWebProxy(), requestTimeout, txtDownloadFolder.Text, _cancellationToken, _cookies, txtDelimiter.Text);
+            var downloader = new InstagramDownload(txtUserAgent.Text, _proxy.GetWebProxy(), requestTimeout,
+                txtDownloadFolder.Text, _cancellationToken, _cookies, txtDelimiter.Text)
+            {
+                IsTotalDownloadsEnabled = cbTotalDownloads.Checked
+            };
 
             // Set downloader properties
-            downloader.IsTotalDownloadsEnabled = cbTotalDownloads.Checked;
             if (!String.IsNullOrEmpty(txtTotalDownloads.Text)) downloader.TotalDownloads = int.Parse(txtTotalDownloads.Text);
             downloader.CustomFolder = cbCreateNewFolder.Checked;
 
@@ -286,7 +286,7 @@ namespace InstagramDownloaderV2.Forms
             Log(@"Started downloading...", nameof(LogType.Success));
 
             // Start all tasks
-            using (SemaphoreSlim semaphore = new SemaphoreSlim(int.Parse(txtThreads.Text)))
+            using (var semaphore = new SemaphoreSlim(int.Parse(txtThreads.Text)))
             {
                 var tasks = new List<Task>();
                 foreach (ListViewItem item in lvInput.Items)

@@ -5,6 +5,10 @@ namespace InstagramDownloaderV2.Classes.Objects.JsonObjects
 {
     public class Media
     {
+        [JsonProperty("edges")]
+        public List<OwnerMediaEdge> Edges { get; set; }
+
+        // FOR LOCATION
         [JsonProperty("nodes")]
         public List<UserPhotoData> Nodes { get; set; }
 
@@ -13,6 +17,12 @@ namespace InstagramDownloaderV2.Classes.Objects.JsonObjects
 
         [JsonProperty("page_info")]
         public PageInfo PageInfo { get; set; }
+    }
+
+    public class OwnerMediaEdge
+    {
+        [JsonProperty("node")]
+        public UserPhotoData Node { get; set; }
     }
 
     public class UserPhotoData
@@ -38,11 +48,20 @@ namespace InstagramDownloaderV2.Classes.Objects.JsonObjects
         [JsonProperty("is_video")]
         public bool IsVideo { get; set; }
 
-        [JsonProperty("code")]
+        [JsonProperty("shortcode")]
         public string ShortCode { get; set; }
+
+        [JsonProperty("code")]
+        public string Code { get; set; }
+
+        [JsonProperty("taken_at_timestamp")]
+        public long TakenAtTimestamp { get; set; }
 
         [JsonProperty("date")]
         public long Date { get; set; }
+
+        [JsonProperty("display_url")]
+        public string DisplayUrl { get; set; }
 
         [JsonProperty("display_src")]
         public string DisplaySrc { get; set; }
@@ -50,11 +69,17 @@ namespace InstagramDownloaderV2.Classes.Objects.JsonObjects
         [JsonProperty("caption")]
         public string Caption { get; set; }
 
-        [JsonProperty("comments")]
+        [JsonProperty("edge_media_to_comment")]
         public FollowCountsObject Comments { get; set; }
 
-        [JsonProperty("likes")]
+        [JsonProperty("edge_media_preview_like")]
         public FollowCountsObject Likes { get; set; }
+
+        [JsonProperty("comments")]
+        public FollowCountsObject TotalComments { get; set; }
+
+        [JsonProperty("likes")]
+        public FollowCountsObject TotalLikes { get; set; }
 
         [JsonProperty("video_views")]
         public long VideoViews { get; set; }

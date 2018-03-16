@@ -7,6 +7,21 @@ namespace InstagramDownloaderV2.Classes.Objects.JsonObjects
     {
         [JsonProperty("entry_data")]
         public MediaEntryData MediaEntryData { get; set; }
+
+        [JsonProperty("data")]
+        public Data Data { get; set; }
+    }
+
+    public class Data
+    {
+        [JsonProperty("user")]
+        public UserMedia UserMedia { get; set; }
+    }
+
+    public class UserMedia
+    {
+        [JsonProperty("edge_owner_to_timeline_media")]
+        public Media Media { get; set; }
     }
 
     public class MediaEntryData
@@ -44,6 +59,12 @@ namespace InstagramDownloaderV2.Classes.Objects.JsonObjects
 
     // For profile page
     public class ProfilePage
+    {
+        [JsonProperty("graphql")]
+        public Graphql Graphql { get; set; }
+    }
+
+    public class Graphql
     {
         [JsonProperty("user")]
         public User User { get; set; }

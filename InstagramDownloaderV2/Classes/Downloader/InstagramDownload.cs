@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using InstagramDownloaderV2.Classes.CSV;
 using InstagramDownloaderV2.Classes.Objects.JsonObjects;
 using InstagramDownloaderV2.Classes.Objects.OtherObjects;
@@ -153,7 +153,6 @@ namespace InstagramDownloaderV2.Classes.Downloader
             {
                 // something probably went wrong
             }
-            
         }
         
         private async Task DownloadUserPhotosAsync(string input, MediaFilter mediaFilter, int downloadLimit)
@@ -165,53 +164,52 @@ namespace InstagramDownloaderV2.Classes.Downloader
             var downloadFolder = mediaFilter.CustomFolder ? $@"{_downloadFolder}\{input}" : _downloadFolder;
             var statsFile = $@"{_statsDirectory}\{input}.csv";
 
-            using(var csvWriter = new Csv(statsFile, _delimiter))
-            while (hasNextPage)
-            {
-                var rootObject = await _jsonParser.GetRootObjectAsync(input, InputType.Username, maxId);
+            var userId = await _jsonParser.GetUserIdAsync(input);
 
-                if (rootObject.MediaEntryData.ProfilePage == null) return;
-
-                foreach (ProfilePage profilePage in rootObject.MediaEntryData.ProfilePage)
+            using (var csvWriter = new Csv(statsFile, _delimiter))
+                while (hasNextPage)
                 {
-                    maxId = profilePage.User.Media.PageInfo.EndCursor;
-                    hasNextPage = profilePage.User.Media.PageInfo.HasNextPage;
+                    var rootObject = await _jsonParser.GetRootObjectAsync(userId, InputType.Username, maxId);
 
-                    foreach (UserPhotoData node in profilePage.User.Media.Nodes)
+                    if (rootObject.Data.UserMedia.Media.Edges == null) return;
+
+                    maxId = rootObject.Data.UserMedia.Media.PageInfo.EndCursor;
+                    hasNextPage = rootObject.Data.UserMedia.Media.PageInfo.HasNextPage;
+                    
+                    foreach (var edge in rootObject.Data.UserMedia.Media.Edges)
                     {
-                        var mediaId = node.Id;
+                        var mediaId = edge.Node.Id;
 
                         string extension;
                         string downloadLink;
-                        if (!node.IsVideo)
+                        if (!edge.Node.IsVideo)
                         {
-                            downloadLink = node.DisplaySrc;
+                            downloadLink = edge.Node.DisplayUrl;
                             extension = "jpg";
                         }
                         else
                         {
-                            RootObject videoDetails = await _jsonParser.GetRootObjectAsync($@"{Globals.BASE_URL}/p/{node.ShortCode}/", InputType.Url);
+                            var videoDetails = await _jsonParser.GetRootObjectAsync($@"{Globals.BASE_URL}/p/{edge.Node.ShortCode}/", InputType.Url);
                             downloadLink = videoDetails.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.VideoUrl;
                             extension = "mp4";
                         }
 
                         _cancellationToken.ThrowIfCancellationRequested();
 
-                        if (mediaFilter.CheckAllUsernameFilters(node)) continue;
+                        if (mediaFilter.CheckAllUsernameFilters(edge)) continue;
                         if (!CheckDownloads(downloadCount, downloadLimit)) return;
 
                         _totalCount++;
                         downloadCount++;
-
+                            
                         await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
 
                         if (mediaFilter.SaveStatsInCsvFile)
                         {
-                            await csvWriter.WriteContent(node);
+                            await csvWriter.WriteContent(edge);
                         }
                     }
                 }
-            }
         }
 
         private async Task<int> DownloadHashtagTopPhotosAsync(string input, List<EdgeHashtagToMediaEdge> edges, MediaFilter mediaFilter, int downloadLimit, string downloadFolder)
@@ -335,7 +333,7 @@ namespace InstagramDownloaderV2.Classes.Downloader
             string statsFile = $@"{_statsDirectory}\{input}.csv";
 
             using (var csvWriter = new Csv(statsFile, _delimiter))
-            foreach (UserPhotoData data in edges)
+            foreach (var data in edges)
             {
                 string mediaId = data.Id;
 
@@ -348,7 +346,7 @@ namespace InstagramDownloaderV2.Classes.Downloader
                 }
                 else
                 {
-                    RootObject videoDetails = await _jsonParser.GetRootObjectAsync($@"{Globals.BASE_URL}/p/{data.ShortCode}/", InputType.Url);
+                    RootObject videoDetails = await _jsonParser.GetRootObjectAsync($@"{Globals.BASE_URL}/p/{data.Code}/", InputType.Url);
 
                     if (videoDetails.MediaEntryData.MediaPostPage == null) return 0;
 
@@ -385,7 +383,6 @@ namespace InstagramDownloaderV2.Classes.Downloader
             string downloadFolder = mediaFilter.CustomFolder ? $@"{_downloadFolder}\{input}" : _downloadFolder;
             string statsFile = $@"{_statsDirectory}\{input}.csv";
             
-
             var rootObject = await _jsonParser.GetRootObjectAsync(input, InputType.Location, maxId);
             if (rootObject.MediaEntryData.LocationsPage == null) return;
 
@@ -404,7 +401,7 @@ namespace InstagramDownloaderV2.Classes.Downloader
                     maxId = rootObject.MediaEntryData.LocationsPage[0].Location.Media.PageInfo.EndCursor;
                     hasNextPage = rootObject.MediaEntryData.LocationsPage[0].Location.Media.PageInfo.HasNextPage;
 
-                    foreach (UserPhotoData data in rootObject.MediaEntryData.LocationsPage[0].Location.Media.Nodes)
+                    foreach (var data in rootObject.MediaEntryData.LocationsPage[0].Location.Media.Nodes)
                     {
                         string mediaId = data.Id;
 
@@ -417,7 +414,8 @@ namespace InstagramDownloaderV2.Classes.Downloader
                         }
                         else
                         {
-                            RootObject videoDetails = await _jsonParser.GetRootObjectAsync($@"{Globals.BASE_URL}/p/{data.ShortCode}/", InputType.Url);
+                            RootObject videoDetails = await _jsonParser.GetRootObjectAsync($@"{Globals.BASE_URL}/p/{data.Code}/", InputType.Url);
+
                             downloadLink = videoDetails.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.VideoUrl;
                             extension = "mp4";
                         }
@@ -454,7 +452,7 @@ namespace InstagramDownloaderV2.Classes.Downloader
                     HttpResponseMessage msg = await request.GetRequestResponseAsync(url);
                     if (msg.IsSuccessStatusCode)
                     {
-                        using (FileStream fs = File.Open($@"{directoryPath}\{fileName}.{extension}", FileMode.Create))
+                        using (var fs = File.Open($@"{directoryPath}\{fileName}.{extension}", FileMode.Create))
                         {
                             //byte[] bytes = await msg.Content.ReadAsByteArrayAsync();
                             //await fs.WriteAsync(bytes, 0, bytes.Length);

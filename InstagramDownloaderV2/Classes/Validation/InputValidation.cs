@@ -1,14 +1,6 @@
 ﻿using InstagramDownloaderV2.Classes.Downloader;
 using System;
-using System.CodeDom;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.Remoting.Messaging;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Windows.Forms.VisualStyles;
 
 namespace InstagramDownloaderV2.Classes.Validation
 {

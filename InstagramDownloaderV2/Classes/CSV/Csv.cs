@@ -52,6 +52,30 @@ namespace InstagramDownloaderV2.Classes.CSV
             await _csvWriter.NextRecordAsync();
         }
 
+        public async Task WriteContent(UserPhotoData data)
+        {
+            var extension = data.IsVideo ? "mp4" : "jpg";
+
+            var csvData = new CsvData
+            {
+                FileName = $"{data.Id}.{extension}",
+                ShortCode = data.ShortCode,
+                DisplaySrc = data.DisplaySrc,
+                MediaId = data.Id,
+                Dimensions = $"W: {data.Dimensions.Width} H: {data.Dimensions.Height}",
+                Caption = data.Caption.Length > 0 ? data.Caption : string.Empty,
+                Likes = data.Likes.Count,
+                Comments = data.Comments.Count,
+                CommentsDisabled = data.CommentsDisabled,
+                IsVideo = data.IsVideo,
+                VideoViews = data.VideoViews,
+                Date = DateTimeOffset.FromUnixTimeSeconds(data.TakenAtTimestamp).LocalDateTime
+            };
+
+            _csvWriter.WriteRecord(csvData);
+            await _csvWriter.NextRecordAsync();
+        }
+
         public async Task WriteContent(EdgeHashtagToMediaEdge data)
         {
             var extension = data.Node.IsVideo ? "mp4" : "jpg";
@@ -77,24 +101,24 @@ namespace InstagramDownloaderV2.Classes.CSV
             await _csvWriter.NextRecordAsync();
         }
 
-        public async Task WriteContent(UserPhotoData data)
+        public async Task WriteContent(OwnerMediaEdge data)
         {
-            var extension = data.IsVideo ? "mp4" : "jpg";
+            var extension = data.Node.IsVideo ? "mp4" : "jpg";
 
             var csvData = new CsvData
             {
-                FileName = $"{data.Id}.{extension}",
-                ShortCode = data.ShortCode,
-                DisplaySrc =  data.DisplaySrc,
-                MediaId = data.Id,
-                Dimensions = $"W: {data.Dimensions.Width} H: {data.Dimensions.Height}",
-                Caption = data.Caption,
-                Likes = data.Likes.Count,
-                Comments = data.Comments.Count,
-                CommentsDisabled = data.CommentsDisabled,
-                IsVideo = data.IsVideo,
-                VideoViews = data.VideoViews,
-                Date = DateTimeOffset.FromUnixTimeSeconds(data.Date).LocalDateTime
+                FileName = $"{data.Node.Id}.{extension}",
+                ShortCode = data.Node.ShortCode,
+                DisplaySrc = data.Node.DisplaySrc,
+                MediaId = data.Node.Id,
+                Dimensions = $"W: {data.Node.Dimensions.Width} H: {data.Node.Dimensions.Height}",
+                Caption = data.Node.Caption,
+                Likes = data.Node.Likes.Count,
+                Comments = data.Node.Comments.Count,
+                CommentsDisabled = data.Node.CommentsDisabled,
+                IsVideo = data.Node.IsVideo,
+                VideoViews = data.Node.VideoViews,
+                Date = DateTimeOffset.FromUnixTimeSeconds(data.Node.TakenAtTimestamp).LocalDateTime
             };
 
             _csvWriter.WriteRecord(csvData);

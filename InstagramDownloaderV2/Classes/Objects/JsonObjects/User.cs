@@ -13,10 +13,10 @@ namespace InstagramDownloaderV2.Classes.Objects.JsonObjects
         [JsonProperty("external_url_linkshimmed")]
         public object ExternalUrlLinkshimmed { get; set; }
 
-        [JsonProperty("followed_by")]
+        [JsonProperty("edge_followed_by")]
         public FollowCountsObject FollowedBy { get; set; }
 
-        [JsonProperty("follows")]
+        [JsonProperty("edge_follow")]
         public FollowCountsObject Follows { get; set; }
 
         [JsonProperty("full_name")]
@@ -40,7 +40,7 @@ namespace InstagramDownloaderV2.Classes.Objects.JsonObjects
         [JsonProperty("username")]
         public string Username { get; set; }
 
-        [JsonProperty("media")]
+        [JsonProperty("edge_owner_to_timeline_media")]
         public Media Media { get; set; }
     }
 

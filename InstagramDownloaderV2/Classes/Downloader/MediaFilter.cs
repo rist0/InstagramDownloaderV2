@@ -88,6 +88,52 @@ namespace InstagramDownloaderV2.Classes.Downloader
         /// </summary>
         /// <param name="photoData"></param>
         /// <returns>True, if it should be skipped.</returns>
+        public bool CheckAllUsernameFilters(OwnerMediaEdge photoData)
+        {
+            if (SkipMediaIfVideo)
+            {
+                if (MediaFilterValidation.SkipMediaIfVideo(photoData.Node.IsVideo)) return true;
+            }
+
+            if (SkipMediaIfPhoto)
+            {
+                if (MediaFilterValidation.SkipMediaIfPhoto(!photoData.Node.IsVideo)) return true;
+            }
+
+            if (SkipMediaIfDescriptionContans)
+            {
+                if (MediaFilterValidation.SkipMediaIfDescriptionContains(photoData.Node.Caption, DescriptionStrings)) return true;
+            }
+
+            if (SkipMediaLikes)
+            {
+                if (MediaFilterValidation.SkipMediaLikes(SkipMediaLikesMore, photoData.Node.Likes.Count, SkipMediaLikesCount)) return true;
+            }
+
+            if (SkipMediaComments)
+            {
+                if (MediaFilterValidation.SkipMediaComments(SkipMediaCommentsMore, photoData.Node.Comments.Count, SkipMediaCommentsCount)) return true;
+            }
+
+            if (SkipMediaUploadDateEnabled)
+            {
+                if(MediaFilterValidation.SkipMediaUploadDate(photoData.Node.TakenAtTimestamp, SkipMediaUploadDate, SkipMediaUploadDateNewer)) return true;
+            }
+
+            if (SkipMediaVideoViews)
+            {
+                if (!MediaFilterValidation.SkipMediaIfVideo(photoData.Node.IsVideo)) return true;
+                if (MediaFilterValidation.SkipMediaVideoViews(photoData.Node.VideoViews, SkipMediaVideoViewsCount, SkipMediaVideoViewsMore)) return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Applies media filters to user+location type of data.
+        /// </summary>
+        /// <param name="photoData"></param>
+        /// <returns>True, if it should be skipped.</returns>
         public bool CheckAllUsernameFilters(UserPhotoData photoData)
         {
             if (SkipMediaIfVideo)
@@ -107,17 +153,17 @@ namespace InstagramDownloaderV2.Classes.Downloader
 
             if (SkipMediaLikes)
             {
-                if (MediaFilterValidation.SkipMediaLikes(SkipMediaLikesMore, photoData.Likes.Count, SkipMediaLikesCount)) return true;
+                if (MediaFilterValidation.SkipMediaLikes(SkipMediaLikesMore, photoData.TotalLikes.Count, SkipMediaLikesCount)) return true;
             }
 
             if (SkipMediaComments)
             {
-                if (MediaFilterValidation.SkipMediaComments(SkipMediaCommentsMore, photoData.Comments.Count, SkipMediaCommentsCount)) return true;
+                if (MediaFilterValidation.SkipMediaComments(SkipMediaCommentsMore, photoData.TotalComments.Count, SkipMediaCommentsCount)) return true;
             }
 
             if (SkipMediaUploadDateEnabled)
             {
-                if(MediaFilterValidation.SkipMediaUploadDate(photoData.Date, SkipMediaUploadDate, SkipMediaUploadDateNewer)) return true;
+                if (MediaFilterValidation.SkipMediaUploadDate(photoData.TakenAtTimestamp, SkipMediaUploadDate, SkipMediaUploadDateNewer)) return true;
             }
 
             if (SkipMediaVideoViews)

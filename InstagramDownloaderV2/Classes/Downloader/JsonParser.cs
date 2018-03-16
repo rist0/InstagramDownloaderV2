@@ -40,7 +40,7 @@ namespace InstagramDownloaderV2.Classes.Downloader
                 case InputType.Username:
                     using (Request request = new Request(_userAgent, _proxy, _requestTimeout, _cookies))
                     {
-                        response = await request.GetRequestStringAsync($"{Globals.BASE_URL}/{input}/?max_id={maxId}");
+                        response = await request.GetRequestStringAsync($"{Globals.BASE_URL}/graphql/query/?query_id=17888483320059182&id={input}&first=12&after={maxId}");
                     }
                     break;
                 case InputType.Hashtag:
@@ -59,9 +59,19 @@ namespace InstagramDownloaderV2.Classes.Downloader
                     throw new Exception("Failed to determine input type");
             }
 
-            RootObject photoData = ParsePhotoData(response);
+            RootObject photoData = inputType != InputType.Username ? ParsePhotoData(response) : JsonConvert.DeserializeObject<RootObject>(response);
 
             return photoData;
+        }
+
+        public async Task<string> GetUserIdAsync(string input)
+        {
+            using (var request = new Request(_userAgent, _proxy, _requestTimeout, _cookies))
+            {
+                var response = await request.GetRequestStringAsync($"{Globals.BASE_URL}/{input}");
+
+                return ParsePhotoData(response).MediaEntryData.ProfilePage?[0].Graphql.User.Id;
+            }
         }
 
         private RootObject ParsePhotoData(string response)
