@@ -102,7 +102,7 @@ namespace InstagramDownloaderV2.Classes.Downloader
 
             if (SkipMediaIfDescriptionContans)
             {
-                if (MediaFilterValidation.SkipMediaIfDescriptionContains(photoData.Node.Caption, DescriptionStrings)) return true;
+                if (MediaFilterValidation.SkipMediaIfDescriptionContains(photoData.Node.EdgeMediaToCaption.Edges[0].Node.Text, DescriptionStrings)) return true;
             }
 
             if (SkipMediaLikes)

@@ -112,7 +112,7 @@ namespace InstagramDownloaderV2.Classes.CSV
                 DisplaySrc = data.Node.DisplaySrc,
                 MediaId = data.Node.Id,
                 Dimensions = $"W: {data.Node.Dimensions.Width} H: {data.Node.Dimensions.Height}",
-                Caption = data.Node.Caption,
+                Caption = data.Node.EdgeMediaToCaption.Edges[0].Node.Text,
                 Likes = data.Node.Likes.Count,
                 Comments = data.Node.Comments.Count,
                 CommentsDisabled = data.Node.CommentsDisabled,

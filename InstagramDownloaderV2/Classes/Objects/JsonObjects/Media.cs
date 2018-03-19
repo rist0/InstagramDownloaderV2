@@ -69,6 +69,9 @@ namespace InstagramDownloaderV2.Classes.Objects.JsonObjects
         [JsonProperty("caption")]
         public string Caption { get; set; }
 
+        [JsonProperty("edge_media_to_caption")]
+        public EdgeMediaToCaption EdgeMediaToCaption { get; set; }
+
         [JsonProperty("edge_media_to_comment")]
         public FollowCountsObject Comments { get; set; }
 
@@ -84,4 +87,22 @@ namespace InstagramDownloaderV2.Classes.Objects.JsonObjects
         [JsonProperty("video_views")]
         public long VideoViews { get; set; }
     }
+}
+
+public class EdgeMediaToCaption
+{
+    [JsonProperty("edges")]
+    public EdgeMediaToCaptionEdge[] Edges { get; set; }
+}
+
+public class EdgeMediaToCaptionEdge
+{
+    [JsonProperty("node")]
+    public FluffyNode Node { get; set; }
+}
+
+public class FluffyNode
+{
+    [JsonProperty("text")]
+    public string Text { get; set; }
 }
