@@ -1,4 +1,7 @@
-﻿2.0.0.3
+﻿2.0.0.4
+- Fixed an issue causing the caption of user not to be saved in the csv file
+
+2.0.0.3
 - Fixed an issue causing the software not to download from Usernames
 - Fixed an issue causing the software not to download from Locations
 - Updated the software to use the latest API changes by Instagram
