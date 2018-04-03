@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CsvHelper;
@@ -109,10 +111,10 @@ namespace InstagramDownloaderV2.Classes.CSV
             {
                 FileName = $"{data.Node.Id}.{extension}",
                 ShortCode = data.Node.ShortCode,
-                DisplaySrc = data.Node.DisplaySrc,
+                DisplaySrc = data.Node.DisplayUrl,
                 MediaId = data.Node.Id,
                 Dimensions = $"W: {data.Node.Dimensions.Width} H: {data.Node.Dimensions.Height}",
-                Caption = data.Node.EdgeMediaToCaption.Edges[0].Node.Text,
+                Caption = data.Node.EdgeMediaToCaption.Edges.Any() ? data.Node.EdgeMediaToCaption.Edges[0].Node.Text : "",
                 Likes = data.Node.Likes.Count,
                 Comments = data.Node.Comments.Count,
                 CommentsDisabled = data.Node.CommentsDisabled,

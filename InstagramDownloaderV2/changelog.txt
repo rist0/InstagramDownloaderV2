@@ -1,4 +1,8 @@
-﻿2.0.0.4
+﻿2.0.0.5
+- Fixed an issue causing the software to crash (stop downloading)
+- Fixed an issue causing the display URL not to save in the csv file
+
+2.0.0.4
 - Fixed an issue causing the caption of user not to be saved in the csv file
 
 2.0.0.3
