@@ -12,9 +12,8 @@ namespace InstagramDownloaderV2.Classes.CSV
         public string Caption { get; set; }
         public long Likes { get; set; }
         public long Comments { get; set; }
-        public bool? CommentsDisabled { get; set; }
         public bool IsVideo { get; set; }
         public long VideoViews { get; set; }
-        public DateTime Date { get; set; }
+        public DateTime? Date { get; set; }
     }
 }

@@ -1,4 +1,22 @@
-﻿2.0.0.5
+﻿2.1.0.0
+[Changes]
+- The software now uses Instagram private API (as opposed to previous web Instagram)
+- A valid Instagram account is now required in order to download
+
+[New]
+- Added a confirmation dialog when existing the edit input form
+- Added support for carousel media
+- Added two new input methods for media id and user id
+- Added a new Help & Support tab in the menu
+
+[Improvements]
+- Improved validation logs
+- Improved UI
+
+[Fix]
+- Fixed all the issues with not being able to download medias
+
+2.0.0.5
 - Fixed an issue causing the software to crash (stop downloading)
 - Fixed an issue causing the display URL not to save in the csv file
 

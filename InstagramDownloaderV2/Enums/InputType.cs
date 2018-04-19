@@ -3,7 +3,9 @@
     public enum InputType
     {
         Url,
+        MediaId,
         Username,
+        UserId,
         Hashtag,
         Location
     }

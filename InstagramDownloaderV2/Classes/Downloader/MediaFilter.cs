@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
-using InstagramDownloaderV2.Classes.Objects.JsonObjects;
+﻿using System;
+using System.Collections.Generic;
 using InstagramDownloaderV2.Classes.Validation;
+using InstaSharper.Classes.Models;
 
 namespace InstagramDownloaderV2.Classes.Downloader
 {
@@ -28,7 +29,7 @@ namespace InstagramDownloaderV2.Classes.Downloader
 
         public bool SkipMediaUploadDateEnabled { get; set; }
         public bool SkipMediaUploadDateNewer { get; set; }
-        public long SkipMediaUploadDate { get; set; }
+        public DateTime SkipMediaUploadDate { get; set; }
 
         public bool SkipTopPosts { get; set; }
 
@@ -36,191 +37,47 @@ namespace InstagramDownloaderV2.Classes.Downloader
 
         public bool SaveStatsInCsvFile { get; set; }
 
-        /// <summary>
-        /// Applies media filters to single url data.
-        /// </summary>
-        /// <param name="photoData"></param>
-        /// <returns>True, if it should be skipped.</returns>
-        public bool CheckAllPhotoFilters(PhotoData photoData)
+        public bool CheckFilters(InstaMedia media)
         {
             if (SkipMediaIfVideo)
             {
-                if (MediaFilterValidation.SkipMediaIfVideo(photoData.IsVideo)) return true;
+                if (MediaFilterValidation.SkipMediaIfVideo(media.MediaType == InstaMediaType.Video)) return true;
             }
 
             if (SkipMediaIfPhoto)
             {
-                if (MediaFilterValidation.SkipMediaIfPhoto(!photoData.IsVideo)) return true;
+                if (MediaFilterValidation.SkipMediaIfPhoto(media.MediaType == InstaMediaType.Image)) return true;
             }
 
             if (SkipMediaIfDescriptionContans)
             {
-                if(photoData.Caption.Edges.Count > 0)
-                    if (MediaFilterValidation.SkipMediaIfDescriptionContains(photoData.Caption.Edges[0].Node.CaptionText, DescriptionStrings)) return true;
+                if (!string.IsNullOrEmpty(media.Caption.Text))
+                    if (MediaFilterValidation.SkipMediaIfDescriptionContains(media.Caption.Text, DescriptionStrings)) return true;
             }
 
             if (SkipMediaLikes)
             {
-                if (MediaFilterValidation.SkipMediaLikes(SkipMediaLikesMore, photoData.Likes.Count, SkipMediaLikesCount)) return true;
+                if (MediaFilterValidation.SkipMediaLikes(SkipMediaLikesMore, media.LikesCount, SkipMediaLikesCount)) return true;
             }
 
             if (SkipMediaComments)
             {
-                if (MediaFilterValidation.SkipMediaComments(SkipMediaCommentsMore, photoData.Comments.Count, SkipMediaCommentsCount)) return true;
+                if (MediaFilterValidation.SkipMediaComments(SkipMediaCommentsMore, int.Parse(media.CommentsCount), SkipMediaCommentsCount)) return true;
             }
 
             if (SkipMediaUploadDateEnabled)
             {
-                if (MediaFilterValidation.SkipMediaUploadDate(photoData.UploadTimestamp, SkipMediaUploadDate, SkipMediaUploadDateNewer)) return true;
+                if (MediaFilterValidation.SkipMediaUploadDate(media.TakenAt, SkipMediaUploadDate, SkipMediaUploadDateNewer)) return true;
             }
 
             if (SkipMediaVideoViews)
             {
-                if (!MediaFilterValidation.SkipMediaIfVideo(photoData.IsVideo)) return true;
-                if (MediaFilterValidation.SkipMediaVideoViews(photoData.VideoViewCount, SkipMediaVideoViewsCount, SkipMediaVideoViewsMore)) return true;
+                if (!MediaFilterValidation.SkipMediaIfVideo(media.MediaType == InstaMediaType.Video)) return true;
+                if (MediaFilterValidation.SkipMediaVideoViews(media.ViewCount, SkipMediaVideoViewsCount, SkipMediaVideoViewsMore)) return true;
             }
 
             return false;
         }
-
-        /// <summary>
-        /// Applies media filters to user+location type of data.
-        /// </summary>
-        /// <param name="photoData"></param>
-        /// <returns>True, if it should be skipped.</returns>
-        public bool CheckAllUsernameFilters(OwnerMediaEdge photoData)
-        {
-            if (SkipMediaIfVideo)
-            {
-                if (MediaFilterValidation.SkipMediaIfVideo(photoData.Node.IsVideo)) return true;
-            }
-
-            if (SkipMediaIfPhoto)
-            {
-                if (MediaFilterValidation.SkipMediaIfPhoto(!photoData.Node.IsVideo)) return true;
-            }
-
-            if (SkipMediaIfDescriptionContans)
-            {
-                if (MediaFilterValidation.SkipMediaIfDescriptionContains(photoData.Node.EdgeMediaToCaption.Edges[0].Node.Text, DescriptionStrings)) return true;
-            }
-
-            if (SkipMediaLikes)
-            {
-                if (MediaFilterValidation.SkipMediaLikes(SkipMediaLikesMore, photoData.Node.Likes.Count, SkipMediaLikesCount)) return true;
-            }
-
-            if (SkipMediaComments)
-            {
-                if (MediaFilterValidation.SkipMediaComments(SkipMediaCommentsMore, photoData.Node.Comments.Count, SkipMediaCommentsCount)) return true;
-            }
-
-            if (SkipMediaUploadDateEnabled)
-            {
-                if(MediaFilterValidation.SkipMediaUploadDate(photoData.Node.TakenAtTimestamp, SkipMediaUploadDate, SkipMediaUploadDateNewer)) return true;
-            }
-
-            if (SkipMediaVideoViews)
-            {
-                if (!MediaFilterValidation.SkipMediaIfVideo(photoData.Node.IsVideo)) return true;
-                if (MediaFilterValidation.SkipMediaVideoViews(photoData.Node.VideoViews, SkipMediaVideoViewsCount, SkipMediaVideoViewsMore)) return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Applies media filters to user+location type of data.
-        /// </summary>
-        /// <param name="photoData"></param>
-        /// <returns>True, if it should be skipped.</returns>
-        public bool CheckAllUsernameFilters(UserPhotoData photoData)
-        {
-            if (SkipMediaIfVideo)
-            {
-                if (MediaFilterValidation.SkipMediaIfVideo(photoData.IsVideo)) return true;
-            }
-
-            if (SkipMediaIfPhoto)
-            {
-                if (MediaFilterValidation.SkipMediaIfPhoto(!photoData.IsVideo)) return true;
-            }
-
-            if (SkipMediaIfDescriptionContans)
-            {
-                if (MediaFilterValidation.SkipMediaIfDescriptionContains(photoData.Caption, DescriptionStrings)) return true;
-            }
-
-            if (SkipMediaLikes)
-            {
-                if (MediaFilterValidation.SkipMediaLikes(SkipMediaLikesMore, photoData.TotalLikes.Count, SkipMediaLikesCount)) return true;
-            }
-
-            if (SkipMediaComments)
-            {
-                if (MediaFilterValidation.SkipMediaComments(SkipMediaCommentsMore, photoData.TotalComments.Count, SkipMediaCommentsCount)) return true;
-            }
-
-            if (SkipMediaUploadDateEnabled)
-            {
-                if (MediaFilterValidation.SkipMediaUploadDate(photoData.TakenAtTimestamp, SkipMediaUploadDate, SkipMediaUploadDateNewer)) return true;
-            }
-
-            if (SkipMediaVideoViews)
-            {
-                if (!MediaFilterValidation.SkipMediaIfVideo(photoData.IsVideo)) return true;
-                if (MediaFilterValidation.SkipMediaVideoViews(photoData.VideoViews, SkipMediaVideoViewsCount, SkipMediaVideoViewsMore)) return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Applies media filters to hashtag type of data.
-        /// </summary>
-        /// <param name="photoData"></param>
-        /// <returns>True, if it should be skipped</returns>
-        public bool CheckAllHashtagFilters(HashtagPhotoData photoData)
-        {
-            if (SkipMediaIfVideo)
-            {
-                if (MediaFilterValidation.SkipMediaIfVideo(photoData.IsVideo)) return true;
-            }
-
-            if (SkipMediaIfPhoto)
-            {
-                if (MediaFilterValidation.SkipMediaIfPhoto(!photoData.IsVideo)) return true;
-            }
-
-            if (SkipMediaIfDescriptionContans)
-            {
-                if (photoData.CaptionEdge.CaptionTextEdge.Count > 0)
-                    if (MediaFilterValidation.SkipMediaIfDescriptionContains(photoData.CaptionEdge.CaptionTextEdge[0].CaptionText.Text, DescriptionStrings)) return true;
-            }
-
-            if (SkipMediaLikes)
-            {
-                if (MediaFilterValidation.SkipMediaLikes(SkipMediaLikesMore, photoData.Likes.Count, SkipMediaLikesCount)) return true;
-            }
-
-            if (SkipMediaComments)
-            {
-                if (MediaFilterValidation.SkipMediaComments(SkipMediaCommentsMore, photoData.Comments.Count, SkipMediaCommentsCount)) return true;
-            }
-
-            if (SkipMediaUploadDateEnabled)
-            {
-                if (MediaFilterValidation.SkipMediaUploadDate(photoData.TakenAtTimestamp, SkipMediaUploadDate, SkipMediaUploadDateNewer)) return true;
-            }
-
-            if (SkipMediaVideoViews)
-            {
-                if (!MediaFilterValidation.SkipMediaIfVideo(photoData.IsVideo)) return true;
-                if (MediaFilterValidation.SkipMediaVideoViews(photoData.VideoViewCount, SkipMediaVideoViewsCount, SkipMediaVideoViewsMore)) return true;
-            }
-
-            return false;
-        }
-
+        
     }
 }

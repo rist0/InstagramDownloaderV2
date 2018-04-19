@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Net;
+using System.IO;
 
 namespace InstagramDownloaderV2.Classes.Settings
 {
@@ -37,6 +37,8 @@ namespace InstagramDownloaderV2.Classes.Settings
         public string AccountUsername { get; set; }
         public string AccountPassword { get; set; }
         public bool HidePassword { get; set; }
-        public CookieContainer AccountCookies { get; set; }
+
+        // Instagram API
+        public Stream StateData { get; set; }
     }
 }

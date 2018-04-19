@@ -20,7 +20,11 @@ namespace InstagramDownloaderV2.Forms
 
         private void btnExit_Click(object sender, EventArgs e)
         {
-            Close();
+            if (MessageBox.Show(@"Are you sure you want to exit the form?", "", MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question) == DialogResult.Yes)
+            {
+                Close();
+            }
         }
 
         private void btnSave_Click(object sender, EventArgs e)
@@ -36,5 +40,6 @@ namespace InstagramDownloaderV2.Forms
 
             Close();
         }
+
     }
 }

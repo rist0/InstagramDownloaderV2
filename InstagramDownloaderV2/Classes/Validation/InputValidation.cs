@@ -1,5 +1,6 @@
 ﻿using InstagramDownloaderV2.Classes.Downloader;
 using System;
+using System.IO;
 using System.Windows.Forms;
 
 namespace InstagramDownloaderV2.Classes.Validation
@@ -8,6 +9,16 @@ namespace InstagramDownloaderV2.Classes.Validation
     {
         public static bool IsDouble(string input) => double.TryParse(input, out double result);
         public static bool IsInt(string input) => int.TryParse(input, out int result);
+
+        public static string GetUriExtension(string uri)
+        {
+            var imageUri = new Uri(uri);
+
+            var imagePath =
+                $"{imageUri.Scheme}{Uri.SchemeDelimiter}{imageUri.Authority}{imageUri.AbsolutePath}";
+
+            return Path.GetExtension(imagePath);
+        }
 
         internal static bool IsCharEnglishLetter(char c) => (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
         internal static bool IsCharDigit(char c) => c >= '0' && c <= '9';

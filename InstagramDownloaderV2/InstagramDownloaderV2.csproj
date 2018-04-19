@@ -38,12 +38,16 @@
     <Reference Include="CsvHelper, Version=6.0.0.0, Culture=neutral, PublicKeyToken=8c4959082be5c823, processorArchitecture=MSIL">
       <HintPath>..\packages\CsvHelper.6.1.1\lib\net45\CsvHelper.dll</HintPath>
     </Reference>
+    <Reference Include="InstaSharper, Version=1.4.57.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\InstaSharper.1.4.57\lib\net452\InstaSharper.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.DirectoryServices" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -57,20 +61,6 @@
   <ItemGroup>
     <Compile Include="Classes\CSV\Csv.cs" />
     <Compile Include="Classes\CSV\CsvData.cs" />
-    <Compile Include="Classes\Downloader\JsonParser.cs" />
-    <Compile Include="Classes\Objects\JsonObjects\Hashtag.cs" />
-    <Compile Include="Classes\Objects\JsonObjects\Location.cs" />
-    <Compile Include="Classes\Objects\JsonObjects\MediaDimensions.cs" />
-    <Compile Include="Classes\Objects\JsonObjects\Media.cs" />
-    <Compile Include="Classes\Objects\JsonObjects\PageInfo.cs" />
-    <Compile Include="Classes\Objects\JsonObjects\RootObject.cs" />
-    <Compile Include="Classes\Objects\JsonObjects\StatsCount.cs" />
-    <Compile Include="Classes\Objects\JsonObjects\User.cs" />
-    <Compile Include="Classes\Objects\OtherObjects\Globals.cs" />
-    <Compile Include="Classes\Objects\JsonObjects\LocationData.cs" />
-    <Compile Include="Classes\Objects\JsonObjects\MediaOwnerData.cs" />
-    <Compile Include="Classes\Objects\JsonObjects\PhotoData.cs" />
-    <Compile Include="Classes\Objects\OtherObjects\InstagramAccount.cs" />
     <Compile Include="Classes\Objects\OtherObjects\ProxyObject.cs" />
     <Compile Include="Classes\Requests\Request.cs" />
     <Compile Include="Classes\Requests\UserAgentGenerator.cs" />
@@ -79,16 +69,22 @@
     <Compile Include="Classes\Settings\SettingsSerialization.cs" />
     <Compile Include="Classes\Validation\InputValidation.cs" />
     <Compile Include="Classes\Validation\MediaFilterValidation.cs" />
-    <Compile Include="Classes\Downloader\InstagramLogin.cs" />
     <Compile Include="Classes\Downloader\MediaFilter.cs" />
+    <Compile Include="Enums\InputMediaType.cs" />
     <Compile Include="Enums\LogType.cs" />
     <Compile Include="Enums\InputType.cs" />
-    <Compile Include="Enums\MediaType.cs" />
+    <Compile Include="Enums\InputUserType.cs" />
     <Compile Include="Forms\EditInputRow.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Forms\EditInputRow.Designer.cs">
       <DependentUpon>EditInputRow.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\HowToUse.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\HowToUse.Designer.cs">
+      <DependentUpon>HowToUse.cs</DependentUpon>
     </Compile>
     <Compile Include="Forms\Main.cs">
       <SubType>Form</SubType>
@@ -102,6 +98,9 @@
     <Compile Include="Classes\Downloader\InstagramDownload.cs" />
     <EmbeddedResource Include="Forms\EditInputRow.resx">
       <DependentUpon>EditInputRow.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\HowToUse.resx">
+      <DependentUpon>HowToUse.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\Main.resx">
       <DependentUpon>Main.cs</DependentUpon>

@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -14,23 +14,29 @@ using InstagramDownloaderV2.Classes.Requests;
 using InstagramDownloaderV2.Classes.Settings;
 using InstagramDownloaderV2.Classes.Validation;
 using InstagramDownloaderV2.Enums;
+using InstaSharper.API;
+using InstaSharper.API.Builder;
+using InstaSharper.Classes;
 
 namespace InstagramDownloaderV2.Forms
 {
     public partial class frmMain : Form
     {
         #region Properties
+        private IInstaApi _instaApi;
+        private readonly HttpClientHandler _httpClientHandler;
         private CancellationTokenSource _cancellationTokenSource;
         private CancellationToken _cancellationToken;
         private ProxyObject _proxy;
-        private CookieContainer _cookies;
+        private bool _isLogged;
 #endregion
 
         #region Constructor
         public frmMain()
         {
             InitializeComponent();
-            //_cookies = null;
+            _httpClientHandler = new HttpClientHandler();
+            _isLogged = false;
         }
 #endregion
 
@@ -180,13 +186,23 @@ namespace InstagramDownloaderV2.Forms
         /// <param name="e"></param>
         private void btnAddInput_Click(object sender, EventArgs e)
         {
-            if (String.IsNullOrEmpty(txtInput.Text)) return;
+            if (string.IsNullOrEmpty(txtInput.Text)) return;
             if (rbUsername.Checked && !InputValidation.IsValidInstagramUsername(txtInput.Text)) return;
 
             if (rbUrl.Checked) lvInput.Items.Add(new ListViewItem(new[] { "Url", txtInput.Text, "1"}));
-            if (rbUsername.Checked) lvInput.Items.Add(new ListViewItem(new[] { "Username", txtInput.Text, numTotalDownloads.Text }));
+            if (rbMediaId.Checked) lvInput.Items.Add(new ListViewItem(new[] { "MediaId", txtInput.Text, "1" }));
+            if (rbUsername.Checked) lvInput.Items.Add(new ListViewItem(new[] {"Username", txtInput.Text, numTotalDownloads.Text}));
+            if (rbUserId.Checked) lvInput.Items.Add(new ListViewItem(new[] { "UserId", txtInput.Text, numTotalDownloads.Text }));
             if (rbHashtag.Checked) lvInput.Items.Add(new ListViewItem(new[] { "Hashtag", txtInput.Text, numTotalDownloads.Text }));
             if (rbLocation.Checked) lvInput.Items.Add(new ListViewItem(new[] { "Location", txtInput.Text, numTotalDownloads.Text }));
+
+            var noInputMethodSelected = gbInputMethod.Controls.OfType<RadioButton>().Any(rb => rb.Checked);
+
+            if (!noInputMethodSelected)
+            {
+                MessageBox.Show(@"Please select an input method and try again.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
 
             txtInput.Clear();
             txtInput.Focus();
@@ -214,19 +230,21 @@ namespace InstagramDownloaderV2.Forms
         /// <param name="e"></param>
         private async void btnStartDownloading_Click(object sender, EventArgs e)
         {
-            //var items = lvInput.Items.Cast<ListViewItem>();
-            //var list = items.Where(x => x.Text == "Url");
-
-            //foreach (var s in list)
-            //{
-            //    Console.WriteLine(s.SubItems[1].Text);
-            //}
-
             // Input validation
             if (!InputValidation.ValidateWebSettings(txtUserAgent.Text, txtRequestTimeout.Text, txtProxy.Text, ':', txtThreads.Text)) return;
             if (!InputValidation.ValidateDownloadSettings(txtDownloadFolder.Text, cbSaveStats.Checked, txtDelimiter.Text)) return;
-            if (lvInput.Items.Count == 0) return;
-            if (!InputValidation.IsInt(txtThreads.Text)) return;
+
+            if (lvInput.Items.Count == 0)
+            {
+                Log("No input found to download. Please enter at least one and try again.", nameof(LogType.Error));
+                return;
+            }
+
+            if (!InputValidation.IsInt(txtThreads.Text))
+            {
+                Log("Invalid threads input. Fix your threads input and try again.", nameof(LogType.Error));
+                return;
+            }
 
             // Proxy initialization
             _proxy = new ProxyObject(txtProxy.Text, ':');
@@ -250,7 +268,8 @@ namespace InstagramDownloaderV2.Forms
                 DescriptionStrings = descriptionStrings,
                 SkipMediaUploadDateEnabled = cbSkipMediaUploadDate.Checked,
                 SkipMediaUploadDateNewer = cbSkipMediaUploadDateMoreLess.Text == @"newer",
-                SkipMediaUploadDate = ((DateTimeOffset)dtUpladTime.Value).ToUnixTimeSeconds(),
+                SkipMediaUploadDate = dtUploadTime.Value,
+                //SkipMediaUploadDate = ((DateTimeOffset)dtUpladTime.Value).ToUnixTimeSeconds(),
                 SkipMediaVideoViews = cbSkipVideoViews.Checked,
                 SkipMediaVideoViewsMore = cbSkipVideoViewsMoreLess.Text == @"more",
                 SkipMediaVideoViewsCount = !String.IsNullOrEmpty(txtSkipVideoViewsCount.Text) ? int.Parse(txtSkipVideoViewsCount.Text) : 0,
@@ -258,7 +277,11 @@ namespace InstagramDownloaderV2.Forms
                 SaveStatsInCsvFile = cbSaveStats.Checked
             };
 
-            if (!InputValidation.ValidateFilters(mediaFilter)) return;
+            if (!InputValidation.ValidateFilters(mediaFilter))
+            {
+                Log("Error detected in the filters. Please check your filter settings and try again.", nameof(LogType.Error));
+                return;
+            }
 
             // Download process
             if (!InputValidation.IsDouble(txtRequestTimeout.Text)) return;
@@ -268,14 +291,14 @@ namespace InstagramDownloaderV2.Forms
             var requestTimeout = double.Parse(txtRequestTimeout.Text);
 
             // Initialize downloader object
-            var downloader = new InstagramDownload(txtUserAgent.Text, _proxy.GetWebProxy(), requestTimeout,
-                txtDownloadFolder.Text, _cancellationToken, _cookies, txtDelimiter.Text)
+            var downloader = new InstagramDownload(_instaApi, mediaFilter, txtUserAgent.Text, _proxy.GetWebProxy(), requestTimeout,
+                txtDownloadFolder.Text, _cancellationToken, txtDelimiter.Text)
             {
                 IsTotalDownloadsEnabled = cbTotalDownloads.Checked
             };
 
             // Set downloader properties
-            if (!String.IsNullOrEmpty(txtTotalDownloads.Text)) downloader.TotalDownloads = int.Parse(txtTotalDownloads.Text);
+            if (!string.IsNullOrEmpty(txtTotalDownloads.Text)) downloader.TotalDownloads = int.Parse(txtTotalDownloads.Text);
             downloader.CustomFolder = cbCreateNewFolder.Checked;
 
             // Update form controls
@@ -285,99 +308,185 @@ namespace InstagramDownloaderV2.Forms
             // Upload logs
             Log(@"Started downloading...", nameof(LogType.Success));
 
-            // Start all tasks
-            using (var semaphore = new SemaphoreSlim(int.Parse(txtThreads.Text)))
+            foreach (ListViewItem item in lvInput.Items)
             {
-                var tasks = new List<Task>();
-                foreach (ListViewItem item in lvInput.Items)
-                {
-                    await semaphore.WaitAsync();
-
-                    try
-                    {
-                        tasks.Add(
-                            Task.Run(async () =>
-                            {
-                                switch (item.SubItems[0].Text)
-                                {
-                                    case "Url":
-                                        try
-                                        {
-                                            await downloader.Download(item.SubItems[1].Text, InputType.Url,
-                                                mediaFilter);
-                                        }
-                                        catch (OperationCanceledException ex)
-                                        {
-                                            Log(ex.Message, nameof(LogType.Error));
-                                        }
-
-                                        break;
-                                    case "Username":
-                                        try
-                                        {
-                                            await downloader.Download(item.SubItems[1].Text, InputType.Username,
-                                                mediaFilter, item.SubItems[2].Text);
-                                        }
-                                        catch (OperationCanceledException ex)
-                                        {
-                                            Log(ex.Message, nameof(LogType.Error));
-                                        }
-
-                                        break;
-                                    case "Hashtag":
-                                        try
-                                        {
-                                            await downloader.Download(item.SubItems[1].Text, InputType.Hashtag,
-                                                mediaFilter, item.SubItems[2].Text);
-                                        }
-                                        catch (OperationCanceledException ex)
-                                        {
-                                            Log(ex.Message, nameof(LogType.Error));
-                                        }
-
-                                        break;
-                                    case "Location":
-                                        try
-                                        {
-                                            await downloader.Download(item.SubItems[1].Text, InputType.Location,
-                                                mediaFilter, item.SubItems[2].Text);
-                                        }
-                                        catch (OperationCanceledException ex)
-                                        {
-                                            Log(ex.Message, nameof(LogType.Error));
-                                        }
-
-                                        break;
-                                }
-                            }, _cancellationToken)
-                        );
-                    }
-                    catch (Exception ex)
-                    {
-                        Log(ex.Message, nameof(LogType.Error));
-                    }
-                    finally
-                    {
-                        semaphore.Release();
-                    }
-                }
-
-                // Wait for tasks to finish
                 try
                 {
-                    await Task.WhenAll(tasks); // might throw an exception if something goes wrong during tasks
+                    switch (item.SubItems[0].Text)
+                    {
+                        case "Url":
+                            try
+                            {
+                                await downloader.Download(item.SubItems[1].Text, InputType.Url, item.SubItems[2].Text);
+                            }
+                            catch (OperationCanceledException ex)
+                            {
+                                Log(ex.Message, nameof(LogType.Error));
+                            }
+
+                            break;
+                        case "MediaId":
+                            try
+                            {
+                                await downloader.Download(item.SubItems[1].Text, InputType.MediaId, item.SubItems[2].Text);
+                            }
+                            catch (OperationCanceledException ex)
+                            {
+                                Log(ex.Message, nameof(LogType.Error));
+                            }
+
+                            break;
+                        case "Username":
+                            try
+                            {
+                                await downloader.Download(item.SubItems[1].Text, InputType.Username, item.SubItems[2].Text);
+                            }
+                            catch (OperationCanceledException ex)
+                            {
+                                Log(ex.Message, nameof(LogType.Error));
+                            }
+
+                            break;
+                        case "UserId":
+                            try
+                            {
+                                await downloader.Download(item.SubItems[1].Text, InputType.UserId, item.SubItems[2].Text);
+                            }
+                            catch (OperationCanceledException ex)
+                            {
+                                Log(ex.Message, nameof(LogType.Error));
+                            }
+
+                            break;
+                        case "Hashtag":
+                            try
+                            {
+                                await downloader.Download(item.SubItems[1].Text, InputType.Hashtag, item.SubItems[2].Text);
+                            }
+                            catch (OperationCanceledException ex)
+                            {
+                                Log(ex.Message, nameof(LogType.Error));
+                            }
+
+                            break;
+                        case "Location":
+                            try
+                            {
+                                await downloader.Download(item.SubItems[1].Text, InputType.Location, item.SubItems[2].Text);
+                            }
+                            catch (OperationCanceledException ex)
+                            {
+                                Log(ex.Message, nameof(LogType.Error));
+                            }
+
+                            break;
+
+                    }
                 }
-                catch (Exception ex)
+                catch (OperationCanceledException ex)
                 {
-                    Console.WriteLine(ex.StackTrace);
+                    Log(ex.Message, nameof(LogType.Error));
                 }
-
-                Log(@"Finished downloading.", nameof(LogType.Success));
-
-                // Update form controls when tasks are finished
-                btnStartDownloading.Enabled = true;
-                btnStopDownloading.Enabled = false;
             }
+
+            btnStartDownloading.Enabled = true;
+            btnStopDownloading.Enabled = false;
+
+            Log(@"Finished downloading...", nameof(LogType.Success));
+
+            // Start all tasks
+            //using (var semaphore = new SemaphoreSlim(int.Parse(txtThreads.Text)))
+            //{
+            //    var tasks = new List<Task>();
+            //    foreach (ListViewItem item in lvInput.Items)
+            //    {
+            //        await semaphore.WaitAsync();
+
+            //        try
+            //        {
+            //            tasks.Add(
+            //                Task.Run(async () =>
+            //                {
+            //                    switch (item.SubItems[0].Text)
+            //                    {
+            //                        case "Url":
+            //                            try
+            //                            {
+            //                                await downloader.Download(item.SubItems[1].Text, InputType.Url,
+            //                                    mediaFilter);
+            //                            }
+            //                            catch (OperationCanceledException ex)
+            //                            {
+            //                                Log(ex.Message, nameof(LogType.Error));
+            //                            }
+
+            //                            break;
+            //                        case "Username":
+            //                            try
+            //                            {
+            //                                await downloader.Download(item.SubItems[1].Text, InputType.Username,
+            //                                    mediaFilter, item.SubItems[2].Text);
+            //                            }
+            //                            catch (OperationCanceledException ex)
+            //                            {
+            //                                Log(ex.Message, nameof(LogType.Error));
+            //                            }
+
+            //                            break;
+            //                        case "Hashtag":
+            //                            try
+            //                            {
+            //                                await downloader.Download(item.SubItems[1].Text, InputType.Hashtag,
+            //                                    mediaFilter, item.SubItems[2].Text);
+            //                            }
+            //                            catch (OperationCanceledException ex)
+            //                            {
+            //                                Log(ex.Message, nameof(LogType.Error));
+            //                            }
+
+            //                            break;
+            //                        case "Location":
+            //                            try
+            //                            {
+            //                                await downloader.Download(item.SubItems[1].Text, InputType.Location,
+            //                                    mediaFilter, item.SubItems[2].Text);
+            //                            }
+            //                            catch (OperationCanceledException ex)
+            //                            {
+            //                                Log(ex.Message, nameof(LogType.Error));
+            //                            }
+
+            //                            break;
+            //                    }
+            //                }, _cancellationToken)
+            //            );
+            //        }
+            //        catch (Exception ex)
+            //        {
+            //            Log(ex.Message, nameof(LogType.Error));
+            //        }
+            //        finally
+            //        {
+            //            semaphore.Release();
+            //        }
+            //    }
+
+            //    // Wait for tasks to finish
+            //    try
+            //    {
+            //        await Task.WhenAll(tasks); // might throw an exception if something goes wrong during tasks
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        Console.WriteLine(ex.StackTrace);
+            //    }
+
+            //    Log(@"Finished downloading.", nameof(LogType.Success));
+
+            //    // Update form controls when tasks are finished
+            //    btnStartDownloading.Enabled = true;
+            //    btnStopDownloading.Enabled = false;
+            //}
         }
 
         /// <summary>
@@ -426,7 +535,7 @@ namespace InstagramDownloaderV2.Forms
         /// <param name="e"></param>
         private void btnExportLogs_Click(object sender, EventArgs e)
         {
-            using (SaveFileDialog sfd = new SaveFileDialog
+            using (var sfd = new SaveFileDialog
             {
                 Filter = @"Text files (.txt)|*.txt",
                 Title = @"Logs Export File",
@@ -449,53 +558,51 @@ namespace InstagramDownloaderV2.Forms
         /// <param name="e"></param>
         private void btnLoadInputFromFile_Click(object sender, EventArgs e)
         {
-            using (OpenFileDialog ofd = 
-                new OpenFileDialog
-                {
-                    Filter = @"Text Files (*.txt)|*.txt|CSV Files (.csv)|*.csv"
-                })
+            using (var ofd = new OpenFileDialog { Filter = @"Text Files (*.txt)|*.txt|CSV Files (.csv)|*.csv" })
             {
                 if (ofd.ShowDialog() == DialogResult.OK)
                 {
                     Log(@"Attempting to load input from file...", nameof(LogType.Info));
-                    string[] lines = File.ReadAllLines(ofd.FileName);
-                    List<string> allowedType = new List<string>
+                    var lines = File.ReadAllLines(ofd.FileName);
+                    var allowedType = new List<string>
                     {
                         "Url",
+                        "MediaId",
                         "Username",
+                        "UserId",
                         "Hashtag",
                         "Location"
                     };
 
-                    foreach (string s in lines)
+                    foreach (var line in lines)
                     {
-                        if (s.Split('|').Length == 2)
+                        if (line.Split('|').Length == 2)
                         {
-                            if (allowedType.Any(type => s.Split('|')[0].Contains(type)))
+                            if (allowedType.Any(type => line.Split('|')[0].Contains(type)))
                             {
-                                lvInput.Items.Add(new ListViewItem(new[] { s.Split('|')[0], s.Split('|')[1], s.Split('|')[0] == "Url" ? "1" : "0" }));
-                                Log($@"Successfully added input '{s.Split('|')[1]}' of type '{s.Split('|')[0]}'", nameof(LogType.Success));
+                                lvInput.Items.Add(new ListViewItem(new[] { line.Split('|')[0], line.Split('|')[1], line.Split('|')[0] == "Url" ? "1" : "0" }));
+                                Log($@"Successfully added input '{line.Split('|')[1]}' of type '{line.Split('|')[0]}'", nameof(LogType.Success));
                             }
                             else
                             {
-                                Log($@"Failed to load string '{s}' due to bad type...", nameof(LogType.Fail));
+                                Log($@"Failed to load string '{line}' due to bad type...", nameof(LogType.Fail));
                             }
                         }
-                        else if (s.Split('|').Length == 3)
+                        else if (line.Split('|').Length == 3)
                         {
-                            if (allowedType.Any(type => s.Split('|')[0].Contains(type)))
+                            if (allowedType.Any(type => line.Split('|')[0].Contains(type)))
                             {
-                                lvInput.Items.Add(new ListViewItem(new[] { s.Split('|')[0], s.Split('|')[1], s.Split('|')[2] }));
-                                Log($@"Successfully added input '{s.Split('|')[1]}' of type '{s.Split('|')[0]}'", nameof(LogType.Success));
+                                lvInput.Items.Add(new ListViewItem(new[] { line.Split('|')[0], line.Split('|')[1], line.Split('|')[2] }));
+                                Log($@"Successfully added input '{line.Split('|')[1]}' of type '{line.Split('|')[0]}'", nameof(LogType.Success));
                             }
                             else
                             {
-                                Log($@"Failed to load string '{s}' due to bad type...", nameof(LogType.Fail));
+                                Log($@"Failed to load string '{line}' due to bad type...", nameof(LogType.Fail));
                             }
                         }
                         else
                         {
-                            Log($@"Failed to load line '{s}' due to bad format...", nameof(LogType.Fail));
+                            Log($@"Failed to load line '{line}' due to bad format...", nameof(LogType.Fail));
                         }
                     }
                 }
@@ -566,7 +673,22 @@ namespace InstagramDownloaderV2.Forms
                 numTotalDownloads.Enabled = true;
             }
         }
-#endregion
+
+        // Disable total downloads if media Id is checked, because it's only one anyways.
+        private void rbMediaId_CheckedChanged(object sender, EventArgs e)
+        {
+            if (rbMediaId.Checked)
+            {
+                lblTotalDownloads.Enabled = false;
+                numTotalDownloads.Enabled = false;
+            }
+            else
+            {
+                lblTotalDownloads.Enabled = true;
+                numTotalDownloads.Enabled = true;
+            }
+        }
+        #endregion
 
         #region LOGIN
         /// <summary>
@@ -586,19 +708,32 @@ namespace InstagramDownloaderV2.Forms
         /// <param name="e"></param>
         private async void btnAccountLogin_Click(object sender, EventArgs e)
         {
+            btnAccountLogin.Enabled = false;
+
             // Proxy initialization
             _proxy = new ProxyObject(txtProxy.Text, ':');
 
-            // Account initialization
-            var instagramAccount = new InstagramAccount(txtAccountUsername.Text, txtAccountPassword.Text, _proxy.GetWebProxy());
-
-            // Login object initialization
-            var instagramLogin = new InstagramLogin(instagramAccount, txtUserAgent.Text, double.Parse(txtRequestTimeout.Text));
-
-            // Calls the login method and checks the cookies
-            _cookies = await instagramLogin.Login();
-            if (_cookies != null)
+            if (!string.IsNullOrEmpty(txtProxy.Text))
             {
+                _httpClientHandler.Proxy = _proxy.GetWebProxy();
+            }
+
+            _instaApi = InstaApiBuilder.CreateBuilder()
+                .UseHttpClientHandler(_httpClientHandler)
+                .SetUser(new UserSessionData
+                {
+                    UserName = txtAccountUsername.Text,
+                    Password = txtAccountPassword.Text
+                })
+                .Build();
+
+            lblAccountLoginStatus.Text = @"Status: Attempting to log in.";
+            var login = await _instaApi.LoginAsync();
+
+            if (login.Succeeded)
+            {
+                _isLogged = true;
+                gbDownload.Enabled = true;
                 lblAccountLoginStatus.Text = @"Status: Logged in.";
                 lblAccountLoginStatus.ForeColor = Color.Green;
                 Log($@"Successfully logged in as {txtAccountUsername.Text}.", nameof(LogType.Success));
@@ -607,7 +742,10 @@ namespace InstagramDownloaderV2.Forms
             {
                 lblAccountLoginStatus.Text = @"Status: Failed to log in.";
                 lblAccountLoginStatus.ForeColor = Color.Red;
-                Log($@"Failed to log in as {txtAccountUsername.Text}.", nameof(LogType.Fail));
+                Log($@"Failed to log in as {txtAccountUsername.Text}. Message: {login.Info.Message}", nameof(LogType.Fail));
+
+                btnAccountLogin.Enabled = true;
+                return;
             }
 
             btnAccountLogin.Enabled = false;
@@ -619,15 +757,31 @@ namespace InstagramDownloaderV2.Forms
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void btnAccountLogout_Click(object sender, EventArgs e)
+        private async void btnAccountLogout_Click(object sender, EventArgs e)
         {
-            _cookies = null;
-            lblAccountLoginStatus.Text = @"Status: Successfully logged out.";
-            lblAccountLoginStatus.ForeColor = Color.DodgerBlue;
-            Log($@"Successfully logged out as {txtAccountUsername.Text}.", nameof(LogType.Fail));
-            txtAccountUsername.Clear();
-            txtAccountPassword.Clear();
-            btnAccountLogin.Enabled = true;
+            var logout = await _instaApi.LogoutAsync();
+
+            btnAccountLogout.Enabled = false;
+            if (logout.Succeeded)
+            {
+                _isLogged = false;
+                lblAccountLoginStatus.Text = @"Status: Successfully logged out.";
+                lblAccountLoginStatus.ForeColor = Color.DodgerBlue;
+                Log($@"Successfully logged out as {txtAccountUsername.Text}.", nameof(LogType.Fail));
+                txtAccountUsername.Clear();
+                txtAccountPassword.Clear();
+                btnAccountLogin.Enabled = true;
+
+                gbDownload.Enabled = false;
+            }
+            else
+            {
+                btnAccountLogout.Enabled = true;
+                lblAccountLoginStatus.Text = @"Status: Failed to log out.";
+                await Task.Delay(2000);
+                lblAccountLoginStatus.Text = @"Status: Successfully logged in.";
+                lblAccountLoginStatus.ForeColor = Color.Green;
+            }
         }
 
         #endregion
@@ -699,16 +853,35 @@ namespace InstagramDownloaderV2.Forms
                 cbTotalDownloads.Checked = settings.TotalDownloadsEnabled;
                 txtTotalDownloads.Text = settings.TotalDownloads;
                 cbSkipTopPosts.Checked = settings.SkipTopPosts;
-                txtAccountUsername.Text = settings.AccountUsername;
-                txtAccountPassword.Text = settings.AccountPassword;
+                //txtAccountUsername.Text = settings.AccountUsername;
+                //txtAccountPassword.Text = settings.AccountPassword;
                 cbHidePassword.Checked = settings.HidePassword;
-                _cookies = settings.AccountCookies;
 
-                if (_cookies != null)
+                if (!string.IsNullOrEmpty(settings.AccountPassword) || !string.IsNullOrEmpty(settings.AccountPassword))
                 {
+                    _instaApi = InstaApiBuilder.CreateBuilder()
+                        .UseHttpClientHandler(_httpClientHandler)
+                        .SetUser(new UserSessionData
+                        {
+                            UserName = settings.AccountUsername,
+                            Password = settings.AccountPassword
+                        })
+                        .Build();
+
+                    txtAccountUsername.Text = settings.AccountUsername;
+                    txtAccountPassword.Text = settings.AccountPassword;
+
+                    if (settings.StateData != null) _instaApi.LoadStateDataFromStream(settings.StateData);
+                }
+
+                if (_instaApi != null)
+                {
+                    gbDownload.Enabled = true;
+                    _isLogged = true;
+
                     lblAccountLoginStatus.Text = @"Status: Successfully restored session.";
                     lblAccountLoginStatus.ForeColor = Color.Green;
-                    Log($@"Successfully restored session as {txtAccountUsername.Text}.", nameof(LogType.Success));
+                    Log($@"Successfully restored session as {settings.AccountUsername}.", nameof(LogType.Success));
                     btnAccountLogin.Enabled = false;
                     btnAccountLogout.Enabled = true;
                 }
@@ -716,7 +889,7 @@ namespace InstagramDownloaderV2.Forms
                 {
                     lblAccountLoginStatus.Text = @"Status: Failed to restore session.";
                     lblAccountLoginStatus.ForeColor = Color.Red;
-                    Log($@"Failed to restore session as {txtAccountUsername.Text}.", nameof(LogType.Fail));
+                    Log($@"Failed to restore session.", nameof(LogType.Fail));
                     btnAccountLogin.Enabled = true;
                     btnAccountLogout.Enabled = false;
                 }
@@ -732,21 +905,31 @@ namespace InstagramDownloaderV2.Forms
                 Log(ex.Message, nameof(LogType.Error));
             }
 
-            using (var request = new Request(txtUserAgent.Text, null, double.Parse(txtRequestTimeout.Text)))
+            try
             {
-                var response = await request.GetRequestResponseAsync("http://imristo.com/download/igdownloader/changelog.txt");
-                if (response.IsSuccessStatusCode)
+                using (var request = new Request(txtUserAgent.Text, null, double.Parse(txtRequestTimeout.Text)))
                 {
-                    txtChangelog.Text = await response.Content.ReadAsStringAsync();
-                }
+                    var response =
+                        await request.GetRequestResponseAsync("http://imristo.com/download/igdownloader/changelog.txt");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        txtChangelog.Text = await response.Content.ReadAsStringAsync();
+                    }
 
-                response = await request.GetRequestResponseAsync("http://imristo.com/download/igdownloader/version.txt");
-                if (response.IsSuccessStatusCode)
-                {
-                    lblLatestVersion.Text += await response.Content.ReadAsStringAsync();
-                }
-                lblCurrentVersion.Text += Application.ProductVersion;
+                    response = await request.GetRequestResponseAsync(
+                        "http://imristo.com/download/igdownloader/version.txt");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        lblLatestVersion.Text += await response.Content.ReadAsStringAsync();
+                    }
 
+                    lblCurrentVersion.Text += Application.ProductVersion;
+
+                }
+            }
+            catch (HttpRequestException)
+            {
+                Log(@"Failed to obtain changelog and latest version. Please check your Internet connection.", nameof(LogType.Error));
             }
         }
 
@@ -757,7 +940,7 @@ namespace InstagramDownloaderV2.Forms
         /// <param name="e"></param>
         private void frmMain_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Settings settings = new Settings
+            var settings = new Settings
             {
                 UserAgent = txtUserAgent.Text,
                 RequestTimeout = txtRequestTimeout.Text,
@@ -780,10 +963,10 @@ namespace InstagramDownloaderV2.Forms
                 TotalDownloadsEnabled = cbTotalDownloads.Checked,
                 TotalDownloads = txtTotalDownloads.Text,
                 SkipTopPosts = cbSkipTopPosts.Checked,
-                AccountUsername = txtAccountUsername.Text,
-                AccountPassword = txtAccountPassword.Text,
+                AccountUsername = _isLogged == false ? string.Empty : txtAccountUsername.Text,
+                AccountPassword = _isLogged == false ? string.Empty : txtAccountPassword.Text,
                 HidePassword = cbHidePassword.Checked,
-                AccountCookies = _cookies
+                StateData = _instaApi?.GetStateDataAsStream()
             };
             SettingsSerialization.Save(settings);
         }
@@ -801,5 +984,14 @@ namespace InstagramDownloaderV2.Forms
         }
 
         #endregion
+
+        private void helpSupportToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (var frm = new HowToUse())
+            {
+                frm.ShowDialog();
+            }
+        }
+
     }
 }

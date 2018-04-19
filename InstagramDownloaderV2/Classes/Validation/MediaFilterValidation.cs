@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace InstagramDownloaderV2.Classes.Validation
 {
-    class MediaFilterValidation
+    internal class MediaFilterValidation
     {
         /// <summary>
         /// Skip media based on likes
@@ -16,18 +17,10 @@ namespace InstagramDownloaderV2.Classes.Validation
         {
             if (more)
             {
-                if (currentCount > filterCount)
-                {
-                    return true;
-                }
-                return false;
+                return currentCount > filterCount;
             }
 
-            if (currentCount < filterCount)
-            {
-                return true;
-            }
-            return false;
+            return currentCount < filterCount;
         }
 
         /// <summary>
@@ -44,18 +37,10 @@ namespace InstagramDownloaderV2.Classes.Validation
         {
             if (more)
             {
-                if (currentCount > filterCount)
-                {
-                    return true;
-                }
-                return false;
+                return currentCount > filterCount;
             }
 
-            if (currentCount < filterCount)
-            {
-                return true;
-            }
-            return false;
+            return currentCount < filterCount;
         }
 
         /// <summary>
@@ -86,7 +71,7 @@ namespace InstagramDownloaderV2.Classes.Validation
         /// <returns>True, if it should be skipped</returns>
         public static bool SkipMediaIfDescriptionContains(string description, List<string> strings)
         {
-            foreach (string s in strings)
+            foreach (var s in strings)
             {
                 if (description.Contains(s)) return true;
             }
@@ -101,7 +86,7 @@ namespace InstagramDownloaderV2.Classes.Validation
         /// <param name="filterDate">the date used to filter</param>
         /// <param name="newer">whether to filter newer or older medias</param>
         /// <returns>True, if it should be skipped</returns>
-        public static bool SkipMediaUploadDate(long uploadDate, long filterDate, bool newer)
+        public static bool SkipMediaUploadDate(DateTime uploadDate, DateTime filterDate, bool newer)
         {
             if (newer)
             {

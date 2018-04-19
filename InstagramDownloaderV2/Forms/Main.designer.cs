@@ -56,7 +56,6 @@
             this.exportAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.panel1 = new System.Windows.Forms.Panel();
             this.gbInput = new System.Windows.Forms.GroupBox();
-            this.label6 = new System.Windows.Forms.Label();
             this.numTotalDownloads = new System.Windows.Forms.NumericUpDown();
             this.lblTotalDownloads = new System.Windows.Forms.Label();
             this.btnLoadInputFromFile = new System.Windows.Forms.Button();
@@ -69,6 +68,8 @@
             this.gbInputMethod = new System.Windows.Forms.GroupBox();
             this.rbLocation = new System.Windows.Forms.RadioButton();
             this.rbHashtag = new System.Windows.Forms.RadioButton();
+            this.rbUserId = new System.Windows.Forms.RadioButton();
+            this.rbMediaId = new System.Windows.Forms.RadioButton();
             this.rbUsername = new System.Windows.Forms.RadioButton();
             this.rbUrl = new System.Windows.Forms.RadioButton();
             this.tabPageFilters = new System.Windows.Forms.TabPage();
@@ -79,7 +80,7 @@
             this.txtTotalDownloads = new System.Windows.Forms.TextBox();
             this.cbTotalDownloads = new System.Windows.Forms.CheckBox();
             this.cbSkipMediaDescription = new System.Windows.Forms.CheckBox();
-            this.dtUpladTime = new System.Windows.Forms.DateTimePicker();
+            this.dtUploadTime = new System.Windows.Forms.DateTimePicker();
             this.cbSkipMediaUploadDate = new System.Windows.Forms.CheckBox();
             this.label9 = new System.Windows.Forms.Label();
             this.txtSkipVideoViewsCount = new System.Windows.Forms.TextBox();
@@ -140,6 +141,7 @@
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.filterToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.resetAllFilterToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.helpSupportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.inputTypeTips = new System.Windows.Forms.ToolTip(this.components);
             this.tabMain.SuspendLayout();
             this.tabPageGeneral.SuspendLayout();
@@ -420,13 +422,13 @@
             // 
             // gbInput
             // 
-            this.gbInput.Controls.Add(this.label6);
             this.gbInput.Controls.Add(this.numTotalDownloads);
             this.gbInput.Controls.Add(this.lblTotalDownloads);
             this.gbInput.Controls.Add(this.btnLoadInputFromFile);
             this.gbInput.Controls.Add(this.btnAddInput);
             this.gbInput.Controls.Add(this.btnClearAllInput);
             this.gbInput.Controls.Add(this.txtInput);
+            this.gbInput.Dock = System.Windows.Forms.DockStyle.Fill;
             this.gbInput.Location = new System.Drawing.Point(0, 0);
             this.gbInput.Name = "gbInput";
             this.gbInput.Size = new System.Drawing.Size(447, 98);
@@ -434,42 +436,35 @@
             this.gbInput.TabStop = false;
             this.gbInput.Text = "Input";
             // 
-            // label6
-            // 
-            this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(108, 70);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(69, 13);
-            this.label6.TabIndex = 6;
-            this.label6.Text = "(0 for no limit)";
-            // 
             // numTotalDownloads
             // 
-            this.numTotalDownloads.Location = new System.Drawing.Point(6, 63);
+            this.numTotalDownloads.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.numTotalDownloads.Location = new System.Drawing.Point(164, 40);
             this.numTotalDownloads.Maximum = new decimal(new int[] {
             10000000,
             0,
             0,
             0});
             this.numTotalDownloads.Name = "numTotalDownloads";
-            this.numTotalDownloads.Size = new System.Drawing.Size(96, 20);
+            this.numTotalDownloads.Size = new System.Drawing.Size(277, 20);
             this.numTotalDownloads.TabIndex = 4;
             // 
             // lblTotalDownloads
             // 
+            this.lblTotalDownloads.Anchor = System.Windows.Forms.AnchorStyles.Left;
             this.lblTotalDownloads.AutoSize = true;
-            this.lblTotalDownloads.Location = new System.Drawing.Point(3, 47);
+            this.lblTotalDownloads.Location = new System.Drawing.Point(3, 42);
             this.lblTotalDownloads.Name = "lblTotalDownloads";
-            this.lblTotalDownloads.Size = new System.Drawing.Size(90, 13);
+            this.lblTotalDownloads.Size = new System.Drawing.Size(155, 13);
             this.lblTotalDownloads.TabIndex = 4;
-            this.lblTotalDownloads.Text = "Total Downloads:";
+            this.lblTotalDownloads.Text = "Total Downloads (0 for no limit):";
             // 
             // btnLoadInputFromFile
             // 
-            this.btnLoadInputFromFile.Anchor = System.Windows.Forms.AnchorStyles.Right;
-            this.btnLoadInputFromFile.Location = new System.Drawing.Point(288, 42);
+            this.btnLoadInputFromFile.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.btnLoadInputFromFile.Location = new System.Drawing.Point(161, 65);
             this.btnLoadInputFromFile.Name = "btnLoadInputFromFile";
-            this.btnLoadInputFromFile.Size = new System.Drawing.Size(75, 23);
+            this.btnLoadInputFromFile.Size = new System.Drawing.Size(125, 23);
             this.btnLoadInputFromFile.TabIndex = 2;
             this.btnLoadInputFromFile.Text = "Load";
             this.btnLoadInputFromFile.UseVisualStyleBackColor = true;
@@ -477,10 +472,10 @@
             // 
             // btnAddInput
             // 
-            this.btnAddInput.Anchor = System.Windows.Forms.AnchorStyles.Right;
-            this.btnAddInput.Location = new System.Drawing.Point(369, 42);
+            this.btnAddInput.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.btnAddInput.Location = new System.Drawing.Point(6, 65);
             this.btnAddInput.Name = "btnAddInput";
-            this.btnAddInput.Size = new System.Drawing.Size(75, 23);
+            this.btnAddInput.Size = new System.Drawing.Size(125, 23);
             this.btnAddInput.TabIndex = 1;
             this.btnAddInput.Text = "Add";
             this.btnAddInput.UseVisualStyleBackColor = true;
@@ -488,10 +483,10 @@
             // 
             // btnClearAllInput
             // 
-            this.btnClearAllInput.Anchor = System.Windows.Forms.AnchorStyles.Right;
-            this.btnClearAllInput.Location = new System.Drawing.Point(165, 42);
+            this.btnClearAllInput.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.btnClearAllInput.Location = new System.Drawing.Point(316, 65);
             this.btnClearAllInput.Name = "btnClearAllInput";
-            this.btnClearAllInput.Size = new System.Drawing.Size(117, 23);
+            this.btnClearAllInput.Size = new System.Drawing.Size(125, 23);
             this.btnClearAllInput.TabIndex = 3;
             this.btnClearAllInput.Text = "Clear All Input";
             this.btnClearAllInput.UseVisualStyleBackColor = true;
@@ -499,10 +494,10 @@
             // 
             // txtInput
             // 
-            this.txtInput.Dock = System.Windows.Forms.DockStyle.Top;
+            this.txtInput.Anchor = System.Windows.Forms.AnchorStyles.Left;
             this.txtInput.Location = new System.Drawing.Point(3, 16);
             this.txtInput.Name = "txtInput";
-            this.txtInput.Size = new System.Drawing.Size(441, 20);
+            this.txtInput.Size = new System.Drawing.Size(438, 20);
             this.txtInput.TabIndex = 0;
             // 
             // gbDownload
@@ -510,6 +505,7 @@
             this.gbDownload.Controls.Add(this.btnStartDownloading);
             this.gbDownload.Controls.Add(this.btnStopDownloading);
             this.gbDownload.Dock = System.Windows.Forms.DockStyle.Right;
+            this.gbDownload.Enabled = false;
             this.gbDownload.Location = new System.Drawing.Point(447, 0);
             this.gbDownload.Name = "gbDownload";
             this.gbDownload.Size = new System.Drawing.Size(184, 98);
@@ -542,6 +538,8 @@
             // 
             this.gbInputMethod.Controls.Add(this.rbLocation);
             this.gbInputMethod.Controls.Add(this.rbHashtag);
+            this.gbInputMethod.Controls.Add(this.rbUserId);
+            this.gbInputMethod.Controls.Add(this.rbMediaId);
             this.gbInputMethod.Controls.Add(this.rbUsername);
             this.gbInputMethod.Controls.Add(this.rbUrl);
             this.gbInputMethod.Dock = System.Windows.Forms.DockStyle.Top;
@@ -555,7 +553,7 @@
             // rbLocation
             // 
             this.rbLocation.AutoSize = true;
-            this.rbLocation.Location = new System.Drawing.Point(132, 63);
+            this.rbLocation.Location = new System.Drawing.Point(314, 63);
             this.rbLocation.Name = "rbLocation";
             this.rbLocation.Size = new System.Drawing.Size(66, 17);
             this.rbLocation.TabIndex = 0;
@@ -569,7 +567,7 @@
             // rbHashtag
             // 
             this.rbHashtag.AutoSize = true;
-            this.rbHashtag.Location = new System.Drawing.Point(132, 31);
+            this.rbHashtag.Location = new System.Drawing.Point(314, 31);
             this.rbHashtag.Name = "rbHashtag";
             this.rbHashtag.Size = new System.Drawing.Size(65, 17);
             this.rbHashtag.TabIndex = 0;
@@ -579,10 +577,33 @@
         "\nExamples:\r\nnature\r\nfitness");
             this.rbHashtag.UseVisualStyleBackColor = true;
             // 
+            // rbUserId
+            // 
+            this.rbUserId.AutoSize = true;
+            this.rbUserId.Location = new System.Drawing.Point(148, 63);
+            this.rbUserId.Name = "rbUserId";
+            this.rbUserId.Size = new System.Drawing.Size(59, 17);
+            this.rbUserId.TabIndex = 0;
+            this.rbUserId.TabStop = true;
+            this.rbUserId.Text = "User Id";
+            this.rbUserId.UseVisualStyleBackColor = true;
+            // 
+            // rbMediaId
+            // 
+            this.rbMediaId.AutoSize = true;
+            this.rbMediaId.Location = new System.Drawing.Point(22, 63);
+            this.rbMediaId.Name = "rbMediaId";
+            this.rbMediaId.Size = new System.Drawing.Size(66, 17);
+            this.rbMediaId.TabIndex = 0;
+            this.rbMediaId.TabStop = true;
+            this.rbMediaId.Text = "Media Id";
+            this.rbMediaId.UseVisualStyleBackColor = true;
+            this.rbMediaId.CheckedChanged += new System.EventHandler(this.rbMediaId_CheckedChanged);
+            // 
             // rbUsername
             // 
             this.rbUsername.AutoSize = true;
-            this.rbUsername.Location = new System.Drawing.Point(22, 63);
+            this.rbUsername.Location = new System.Drawing.Point(148, 31);
             this.rbUsername.Name = "rbUsername";
             this.rbUsername.Size = new System.Drawing.Size(73, 17);
             this.rbUsername.TabIndex = 0;
@@ -597,10 +618,10 @@
             this.rbUrl.AutoSize = true;
             this.rbUrl.Location = new System.Drawing.Point(22, 31);
             this.rbUrl.Name = "rbUrl";
-            this.rbUrl.Size = new System.Drawing.Size(49, 17);
+            this.rbUrl.Size = new System.Drawing.Size(38, 17);
             this.rbUrl.TabIndex = 0;
             this.rbUrl.TabStop = true;
-            this.rbUrl.Text = "Url(s)";
+            this.rbUrl.Text = "Url";
             this.inputTypeTips.SetToolTip(this.rbUrl, "Input takes one URL per input.\r\n\r\nExamples:\r\nhttps://www.instagram.com/p/BeWKx0JB" +
         "DTS/?taken-by=instagram\r\nhttps://www.instagram.com/p/BeWKx0JBDTS\r\nhttps://www.in" +
         "stagram.com/p/BeWKx0JBDTS/");
@@ -625,7 +646,7 @@
             this.gbMediaFilters.Controls.Add(this.txtTotalDownloads);
             this.gbMediaFilters.Controls.Add(this.cbTotalDownloads);
             this.gbMediaFilters.Controls.Add(this.cbSkipMediaDescription);
-            this.gbMediaFilters.Controls.Add(this.dtUpladTime);
+            this.gbMediaFilters.Controls.Add(this.dtUploadTime);
             this.gbMediaFilters.Controls.Add(this.cbSkipMediaUploadDate);
             this.gbMediaFilters.Controls.Add(this.label9);
             this.gbMediaFilters.Controls.Add(this.txtSkipVideoViewsCount);
@@ -678,7 +699,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(264, 358);
+            this.label1.Location = new System.Drawing.Point(261, 343);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(63, 13);
             this.label1.TabIndex = 18;
@@ -686,7 +707,7 @@
             // 
             // txtTotalDownloads
             // 
-            this.txtTotalDownloads.Location = new System.Drawing.Point(158, 355);
+            this.txtTotalDownloads.Location = new System.Drawing.Point(155, 340);
             this.txtTotalDownloads.Name = "txtTotalDownloads";
             this.txtTotalDownloads.Size = new System.Drawing.Size(100, 20);
             this.txtTotalDownloads.TabIndex = 17;
@@ -694,7 +715,7 @@
             // cbTotalDownloads
             // 
             this.cbTotalDownloads.AutoSize = true;
-            this.cbTotalDownloads.Location = new System.Drawing.Point(21, 357);
+            this.cbTotalDownloads.Location = new System.Drawing.Point(21, 342);
             this.cbTotalDownloads.Name = "cbTotalDownloads";
             this.cbTotalDownloads.Size = new System.Drawing.Size(141, 17);
             this.cbTotalDownloads.TabIndex = 16;
@@ -711,17 +732,17 @@
             this.cbSkipMediaDescription.Text = "Skip media if description contains any of the following strings (one per line):";
             this.cbSkipMediaDescription.UseVisualStyleBackColor = true;
             // 
-            // dtUpladTime
+            // dtUploadTime
             // 
-            this.dtUpladTime.Location = new System.Drawing.Point(238, 325);
-            this.dtUpladTime.Name = "dtUpladTime";
-            this.dtUpladTime.Size = new System.Drawing.Size(200, 20);
-            this.dtUpladTime.TabIndex = 14;
+            this.dtUploadTime.Location = new System.Drawing.Point(251, 311);
+            this.dtUploadTime.Name = "dtUploadTime";
+            this.dtUploadTime.Size = new System.Drawing.Size(200, 20);
+            this.dtUploadTime.TabIndex = 14;
             // 
             // cbSkipMediaUploadDate
             // 
             this.cbSkipMediaUploadDate.AutoSize = true;
-            this.cbSkipMediaUploadDate.Location = new System.Drawing.Point(21, 328);
+            this.cbSkipMediaUploadDate.Location = new System.Drawing.Point(21, 314);
             this.cbSkipMediaUploadDate.Name = "cbSkipMediaUploadDate";
             this.cbSkipMediaUploadDate.Size = new System.Drawing.Size(92, 17);
             this.cbSkipMediaUploadDate.TabIndex = 13;
@@ -731,7 +752,7 @@
             // label9
             // 
             this.label9.AutoSize = true;
-            this.label9.Location = new System.Drawing.Point(334, 297);
+            this.label9.Location = new System.Drawing.Point(333, 287);
             this.label9.Name = "label9";
             this.label9.Size = new System.Drawing.Size(63, 13);
             this.label9.TabIndex = 12;
@@ -739,7 +760,7 @@
             // 
             // txtSkipVideoViewsCount
             // 
-            this.txtSkipVideoViewsCount.Location = new System.Drawing.Point(251, 294);
+            this.txtSkipVideoViewsCount.Location = new System.Drawing.Point(251, 284);
             this.txtSkipVideoViewsCount.Name = "txtSkipVideoViewsCount";
             this.txtSkipVideoViewsCount.Size = new System.Drawing.Size(77, 20);
             this.txtSkipVideoViewsCount.TabIndex = 11;
@@ -747,7 +768,7 @@
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(334, 268);
+            this.label4.Location = new System.Drawing.Point(333, 259);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(55, 13);
             this.label4.TabIndex = 12;
@@ -755,7 +776,7 @@
             // 
             // txtSkipMediaCommentsCount
             // 
-            this.txtSkipMediaCommentsCount.Location = new System.Drawing.Point(251, 265);
+            this.txtSkipMediaCommentsCount.Location = new System.Drawing.Point(251, 256);
             this.txtSkipMediaCommentsCount.Name = "txtSkipMediaCommentsCount";
             this.txtSkipMediaCommentsCount.Size = new System.Drawing.Size(77, 20);
             this.txtSkipMediaCommentsCount.TabIndex = 11;
@@ -763,7 +784,7 @@
             // label8
             // 
             this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(217, 297);
+            this.label8.Location = new System.Drawing.Point(217, 287);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(28, 13);
             this.label8.TabIndex = 10;
@@ -772,7 +793,7 @@
             // label7
             // 
             this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(204, 329);
+            this.label7.Location = new System.Drawing.Point(217, 315);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(28, 13);
             this.label7.TabIndex = 10;
@@ -781,7 +802,7 @@
             // label5
             // 
             this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(217, 268);
+            this.label5.Location = new System.Drawing.Point(217, 259);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(28, 13);
             this.label5.TabIndex = 10;
@@ -794,7 +815,7 @@
             this.cbSkipVideoViewsMoreLess.Items.AddRange(new object[] {
             "more",
             "less"});
-            this.cbSkipVideoViewsMoreLess.Location = new System.Drawing.Point(132, 294);
+            this.cbSkipVideoViewsMoreLess.Location = new System.Drawing.Point(132, 284);
             this.cbSkipVideoViewsMoreLess.Name = "cbSkipVideoViewsMoreLess";
             this.cbSkipVideoViewsMoreLess.Size = new System.Drawing.Size(79, 21);
             this.cbSkipVideoViewsMoreLess.TabIndex = 9;
@@ -806,7 +827,7 @@
             this.cbSkipMediaUploadDateMoreLess.Items.AddRange(new object[] {
             "older",
             "newer"});
-            this.cbSkipMediaUploadDateMoreLess.Location = new System.Drawing.Point(119, 326);
+            this.cbSkipMediaUploadDateMoreLess.Location = new System.Drawing.Point(132, 312);
             this.cbSkipMediaUploadDateMoreLess.Name = "cbSkipMediaUploadDateMoreLess";
             this.cbSkipMediaUploadDateMoreLess.Size = new System.Drawing.Size(79, 21);
             this.cbSkipMediaUploadDateMoreLess.TabIndex = 9;
@@ -814,7 +835,7 @@
             // cbSkipVideoViews
             // 
             this.cbSkipVideoViews.AutoSize = true;
-            this.cbSkipVideoViews.Location = new System.Drawing.Point(21, 296);
+            this.cbSkipVideoViews.Location = new System.Drawing.Point(21, 286);
             this.cbSkipVideoViews.Name = "cbSkipVideoViews";
             this.cbSkipVideoViews.Size = new System.Drawing.Size(114, 17);
             this.cbSkipVideoViews.TabIndex = 8;
@@ -828,7 +849,7 @@
             this.cbSkipMediaCommentsMoreLess.Items.AddRange(new object[] {
             "more",
             "less"});
-            this.cbSkipMediaCommentsMoreLess.Location = new System.Drawing.Point(132, 265);
+            this.cbSkipMediaCommentsMoreLess.Location = new System.Drawing.Point(132, 256);
             this.cbSkipMediaCommentsMoreLess.Name = "cbSkipMediaCommentsMoreLess";
             this.cbSkipMediaCommentsMoreLess.Size = new System.Drawing.Size(79, 21);
             this.cbSkipMediaCommentsMoreLess.TabIndex = 9;
@@ -836,7 +857,7 @@
             // cbSkipMediaComments
             // 
             this.cbSkipMediaComments.AutoSize = true;
-            this.cbSkipMediaComments.Location = new System.Drawing.Point(21, 267);
+            this.cbSkipMediaComments.Location = new System.Drawing.Point(21, 258);
             this.cbSkipMediaComments.Name = "cbSkipMediaComments";
             this.cbSkipMediaComments.Size = new System.Drawing.Size(114, 17);
             this.cbSkipMediaComments.TabIndex = 8;
@@ -846,7 +867,7 @@
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(334, 237);
+            this.label3.Location = new System.Drawing.Point(333, 231);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(28, 13);
             this.label3.TabIndex = 7;
@@ -854,7 +875,7 @@
             // 
             // txtSkipMediaLikesCount
             // 
-            this.txtSkipMediaLikesCount.Location = new System.Drawing.Point(251, 234);
+            this.txtSkipMediaLikesCount.Location = new System.Drawing.Point(250, 228);
             this.txtSkipMediaLikesCount.Name = "txtSkipMediaLikesCount";
             this.txtSkipMediaLikesCount.Size = new System.Drawing.Size(77, 20);
             this.txtSkipMediaLikesCount.TabIndex = 6;
@@ -862,7 +883,7 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(217, 237);
+            this.label2.Location = new System.Drawing.Point(217, 231);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(28, 13);
             this.label2.TabIndex = 5;
@@ -875,7 +896,7 @@
             this.cbSkipMediaLikesMoreLess.Items.AddRange(new object[] {
             "more",
             "less"});
-            this.cbSkipMediaLikesMoreLess.Location = new System.Drawing.Point(132, 234);
+            this.cbSkipMediaLikesMoreLess.Location = new System.Drawing.Point(132, 228);
             this.cbSkipMediaLikesMoreLess.Name = "cbSkipMediaLikesMoreLess";
             this.cbSkipMediaLikesMoreLess.Size = new System.Drawing.Size(79, 21);
             this.cbSkipMediaLikesMoreLess.TabIndex = 4;
@@ -883,7 +904,7 @@
             // cbSkipMediaLikes
             // 
             this.cbSkipMediaLikes.AutoSize = true;
-            this.cbSkipMediaLikes.Location = new System.Drawing.Point(21, 236);
+            this.cbSkipMediaLikes.Location = new System.Drawing.Point(21, 230);
             this.cbSkipMediaLikes.Name = "cbSkipMediaLikes";
             this.cbSkipMediaLikes.Size = new System.Drawing.Size(114, 17);
             this.cbSkipMediaLikes.TabIndex = 3;
@@ -893,7 +914,7 @@
             // cbSkipPhotos
             // 
             this.cbSkipPhotos.AutoSize = true;
-            this.cbSkipPhotos.Location = new System.Drawing.Point(21, 210);
+            this.cbSkipPhotos.Location = new System.Drawing.Point(21, 207);
             this.cbSkipPhotos.Name = "cbSkipPhotos";
             this.cbSkipPhotos.Size = new System.Drawing.Size(88, 17);
             this.cbSkipPhotos.TabIndex = 3;
@@ -904,7 +925,7 @@
             // cbSkipVideos
             // 
             this.cbSkipVideos.AutoSize = true;
-            this.cbSkipVideos.Location = new System.Drawing.Point(21, 185);
+            this.cbSkipVideos.Location = new System.Drawing.Point(21, 184);
             this.cbSkipVideos.Name = "cbSkipVideos";
             this.cbSkipVideos.Size = new System.Drawing.Size(87, 17);
             this.cbSkipVideos.TabIndex = 3;
@@ -1149,9 +1170,9 @@
             this.lblThreads.AutoSize = true;
             this.lblThreads.Location = new System.Drawing.Point(14, 117);
             this.lblThreads.Name = "lblThreads";
-            this.lblThreads.Size = new System.Drawing.Size(49, 13);
+            this.lblThreads.Size = new System.Drawing.Size(150, 13);
             this.lblThreads.TabIndex = 1;
-            this.lblThreads.Text = "Threads:";
+            this.lblThreads.Text = "Threads (temporarily disabled):";
             // 
             // lblRequestTimeout
             // 
@@ -1180,6 +1201,7 @@
             // 
             // txtThreads
             // 
+            this.txtThreads.Enabled = false;
             this.txtThreads.Location = new System.Drawing.Point(17, 133);
             this.txtThreads.Name = "txtThreads";
             this.txtThreads.Size = new System.Drawing.Size(550, 20);
@@ -1259,7 +1281,8 @@
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileToolStripMenuItem,
-            this.filterToolStripMenuItem});
+            this.filterToolStripMenuItem,
+            this.helpSupportToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(645, 24);
@@ -1278,14 +1301,14 @@
             // updateToolStripMenuItem
             // 
             this.updateToolStripMenuItem.Name = "updateToolStripMenuItem";
-            this.updateToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.updateToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
             this.updateToolStripMenuItem.Text = "Update";
             this.updateToolStripMenuItem.Click += new System.EventHandler(this.updateToolStripMenuItem_Click);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
             this.exitToolStripMenuItem.Text = "Exit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
@@ -1303,6 +1326,13 @@
             this.resetAllFilterToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
             this.resetAllFilterToolStripMenuItem.Text = "Reset All Filters";
             this.resetAllFilterToolStripMenuItem.Click += new System.EventHandler(this.resetAllFilterToolStripMenuItem_Click);
+            // 
+            // helpSupportToolStripMenuItem
+            // 
+            this.helpSupportToolStripMenuItem.Name = "helpSupportToolStripMenuItem";
+            this.helpSupportToolStripMenuItem.Size = new System.Drawing.Size(102, 20);
+            this.helpSupportToolStripMenuItem.Text = "Help && Support";
+            this.helpSupportToolStripMenuItem.Click += new System.EventHandler(this.helpSupportToolStripMenuItem_Click);
             // 
             // frmMain
             // 
@@ -1423,7 +1453,7 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.ComboBox cbSkipMediaLikesMoreLess;
         private System.Windows.Forms.CheckBox cbSkipMediaLikes;
-        private System.Windows.Forms.DateTimePicker dtUpladTime;
+        private System.Windows.Forms.DateTimePicker dtUploadTime;
         private System.Windows.Forms.CheckBox cbSkipMediaUploadDate;
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.ComboBox cbSkipMediaUploadDateMoreLess;
@@ -1451,7 +1481,6 @@
         private System.Windows.Forms.ColumnHeader lvInputDownloads;
         private System.Windows.Forms.NumericUpDown numTotalDownloads;
         private System.Windows.Forms.Label lblTotalDownloads;
-        private System.Windows.Forms.Label label6;
         private System.Windows.Forms.ToolStripMenuItem editSelectedRowToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.Label label9;
@@ -1470,6 +1499,9 @@
         private System.Windows.Forms.LinkLabel linkLabel2;
         private System.Windows.Forms.LinkLabel linkLabel1;
         private System.Windows.Forms.GroupBox gbCreditsAndVersion;
+        private System.Windows.Forms.RadioButton rbUserId;
+        private System.Windows.Forms.RadioButton rbMediaId;
+        private System.Windows.Forms.ToolStripMenuItem helpSupportToolStripMenuItem;
     }
 }
 

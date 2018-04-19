@@ -105,7 +105,9 @@
             this.cbType.FormattingEnabled = true;
             this.cbType.Items.AddRange(new object[] {
             "Url",
+            "MediaId",
             "Username",
+            "UserId",
             "Hashtag",
             "Location"});
             this.cbType.Location = new System.Drawing.Point(22, 36);

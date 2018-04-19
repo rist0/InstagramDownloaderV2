@@ -1,17 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Net;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using InstagramDownloaderV2.Classes.CSV;
-using InstagramDownloaderV2.Classes.Objects.JsonObjects;
-using InstagramDownloaderV2.Classes.Objects.OtherObjects;
 using InstagramDownloaderV2.Classes.Requests;
 using InstagramDownloaderV2.Classes.Validation;
 using InstagramDownloaderV2.Enums;
+using InstaSharper.API;
+using InstaSharper.Classes;
+using InstaSharper.Classes.Models;
 
 namespace InstagramDownloaderV2.Classes.Downloader
 {
@@ -20,33 +18,36 @@ namespace InstagramDownloaderV2.Classes.Downloader
 #region Variables and properties
         // Download settings
         private readonly string _downloadFolder;
-        private CancellationToken _cancellationToken;
+        private readonly CancellationToken _cancellationToken;
         private int _totalCount;
 
         // Request params
         private readonly string _userAgent;
         private readonly WebProxy _proxy;
         private readonly double _requestTimeout;
-        private readonly CookieContainer _cookies;
-
-        // Json Parser
-        private readonly JsonParser _jsonParser;
 
         // Csv Writer
         private readonly string _delimiter;
         private readonly string _statsDirectory;
-        private bool _headerIsWritten; // for single Url csv header
 
         // Properties
-        public InputType InputType { get; set; }
         public bool IsTotalDownloadsEnabled { get; set; }
         public int TotalDownloads { get; set; }
         public bool CustomFolder { get; set; }
+
+        // Media filter
+        private readonly MediaFilter _mediaFilter;
+
+        // Insta api
+        private readonly IInstaApi _instaApi;
 #endregion
 
 #region Constructor
-        public InstagramDownload(string userAgent, WebProxy proxy, double requestTimeout, string downloadFolder, CancellationToken cancellationToken, CookieContainer cookies, string csvFileDelimiter)
+        public InstagramDownload(IInstaApi instaApi, MediaFilter mediaFilter, string userAgent, WebProxy proxy, double requestTimeout, string downloadFolder, CancellationToken cancellationToken, string csvFileDelimiter)
         {
+            _instaApi = instaApi;
+            _mediaFilter = mediaFilter;
+
             _downloadFolder = downloadFolder;
             _cancellationToken = cancellationToken;
             _totalCount = 0;
@@ -54,405 +55,341 @@ namespace InstagramDownloaderV2.Classes.Downloader
             _userAgent = userAgent;
             _proxy = proxy;
             _requestTimeout = requestTimeout;
-            _cookies = cookies;
 
-            _jsonParser = new JsonParser(userAgent, proxy, requestTimeout, cookies);
-
-            _headerIsWritten = false;
-            _delimiter = !String.IsNullOrEmpty(csvFileDelimiter) ? csvFileDelimiter : ",";
+            _delimiter = !string.IsNullOrEmpty(csvFileDelimiter) ? csvFileDelimiter : ",";
             _statsDirectory = downloadFolder + @"\stats";
             if (!Directory.Exists(_statsDirectory)) Directory.CreateDirectory(_statsDirectory);
         }
 #endregion
 
 #region Methods
-        public async Task Download(string input, InputType inputType, MediaFilter mediaFilter, string downloadLimit = "0")
+        public async Task Download(string input, InputType inputType, string downloadLimit = "0")
         {
             if (!InputValidation.IsInt(downloadLimit)) return;
 
             switch (inputType)
             {
                 case InputType.Url:
-                    await DownloadUrlPhotoAsync(input, mediaFilter);
+                    await DownloadUrlPhotoAsync(input, InputMediaType.Url);
+                    break;
+                case InputType.MediaId:
+                    await DownloadUrlPhotoAsync(input, InputMediaType.Id);
                     break;
                 case InputType.Username:
-                    await DownloadUserPhotosAsync(input, mediaFilter, int.Parse(downloadLimit));
+                    await DownloadUserMediaAsync(input, InputUserType.Username, int.Parse(downloadLimit));
+                    break;
+                case InputType.UserId:
+                    await DownloadUserMediaAsync(input, InputUserType.Id, int.Parse(downloadLimit));
                     break;
                 case InputType.Hashtag:
-                    await DownloadHashtagPhotosAsync(input, mediaFilter, int.Parse(downloadLimit));
+                    await DownloadTagMediaAsync(input, int.Parse(downloadLimit));
                     break;
                 case InputType.Location:
-                    await DownloadLocationPhotosAsync(input, mediaFilter, int.Parse(downloadLimit));
+                    await DownloadLocationMediaAsync(input, int.Parse(downloadLimit));
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(inputType), inputType, null);
             }
         }
 
-        private async Task DownloadUrlPhotoAsync(string input, MediaFilter mediaFilter)
+        private async Task DownloadInstaMediaAsync(InstaMedia media, string statsFile, string downloadFolder = "")
+        {
+            var mediaType = media.MediaType;
+            if (downloadFolder == "") downloadFolder = _downloadFolder;
+
+            switch (mediaType)
+            {
+                case InstaMediaType.Image:
+                    // Get download url
+                    var imgUrl = media.Images[0].URI;
+
+                    // Get uri extension
+                    var imgExtension = InputValidation.GetUriExtension(imgUrl);
+
+                    // Download
+                    await DownloadMediaAsync(downloadFolder, media.Pk + imgExtension, imgUrl);
+
+                    // Write csv
+                    if (_mediaFilter.SaveStatsInCsvFile)
+                        using (var csvWriter = new Csv(statsFile, _delimiter))
+                        {
+                            await csvWriter.WriteContent(media);
+                        }
+
+                    break;
+                case InstaMediaType.Video:
+                    // Get download url
+                    var vidUrl = media.Videos[0].Url;
+
+                    // Get uri extension
+                    var vidExtension = InputValidation.GetUriExtension(vidUrl);
+
+                    // Download
+                    await DownloadMediaAsync(downloadFolder, media.Pk + vidExtension, vidUrl);
+
+                    // Write csv
+                    if (_mediaFilter.SaveStatsInCsvFile)
+                        using (var csvWriter = new Csv(statsFile, _delimiter))
+                        {
+                            await csvWriter.WriteContent(media);
+                        }
+
+                    break;
+                case InstaMediaType.Carousel:
+                    // Write csv [for main post]
+                    if (_mediaFilter.SaveStatsInCsvFile)
+                        using (var csvWriter = new Csv(statsFile, _delimiter))
+                        {
+                            await csvWriter.WriteContent(media);
+                        }
+
+                    foreach (var c in media.Carousel)
+                    {
+                        _cancellationToken.ThrowIfCancellationRequested();
+
+                        switch (c.MediaType)
+                        {
+                            case InstaMediaType.Image:
+                                // Get download url
+                                var imageUrl = c.Images[0].URI;
+
+                                // Get Uri extension
+                                var imageExtension = InputValidation.GetUriExtension(imageUrl);
+
+                                // Download
+                                await DownloadMediaAsync(downloadFolder, c.Pk + imageExtension, imageUrl);
+
+                                // Write csv
+                                if (_mediaFilter.SaveStatsInCsvFile)
+                                    using (var csvWriter = new Csv(statsFile, _delimiter))
+                                    {
+                                        await csvWriter.WriteContent(c);
+                                    }
+
+                                break;
+                            case InstaMediaType.Video:
+                                // Get download url
+                                var videoUrl = c.Videos[0].Url;
+
+                                // Get Uri extension
+                                var videoExtension = InputValidation.GetUriExtension(videoUrl);
+
+                                // Download
+                                await DownloadMediaAsync(downloadFolder, c.Pk + videoExtension, videoUrl);
+
+                                // Write csv
+                                if (_mediaFilter.SaveStatsInCsvFile)
+                                    using (var csvWriter = new Csv(statsFile, _delimiter))
+                                    {
+                                        await csvWriter.WriteContent(c);
+                                    }
+
+                                break;
+                        }
+                    }
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+        
+        private async Task DownloadUrlPhotoAsync(string input, InputMediaType inputType)
         {
             try
             {
-                string statsFile = $@"{_statsDirectory}\urls.csv";
-                
-                var rootObject = await _jsonParser.GetRootObjectAsync(input, InputType.Url);
+                var statsFile = $@"{_statsDirectory}\urls.csv";
+                IResult<string> mediaIdFromUrl = null;
 
-                if (rootObject.MediaEntryData.MediaPostPage == null) return;
-
-                var downloadLink = rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.IsVideo ?
-                    rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.VideoUrl :
-                    rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.DisplayUrl;
-
-                var mediaId = rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.MediaId;
-
-                string extension;
-                switch (rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.MediaType)
+                if (!File.Exists(statsFile))
                 {
-                    case MediaType.Image:
-                        extension = "jpg";
-                        break;
-                    case MediaType.Video:
-                        extension = "mp4";
-                        break;
-                    case MediaType.Story:
-                        extension = "jpg";
-                        break;
-                    default:
-                        throw new Exception("Couldn't initialize extension type");
+                    using (var csv = new Csv(statsFile, _delimiter))
+                    {
+                        csv.WriteHeader();
+                    }
+                }
+
+                if (inputType == InputMediaType.Url)
+                {
+                    mediaIdFromUrl = await _instaApi.GetMediaIdFromUrlAsync(new Uri(input));
+
+                    if (!mediaIdFromUrl.Succeeded)
+                    {
+                        return;
+                    }
+                }
+
+                var mediaId = mediaIdFromUrl == null ? input : mediaIdFromUrl.Value;
+
+                var mediaInformation = await _instaApi.GetMediaByIdAsync(mediaId);
+
+                if (!mediaInformation.Succeeded)
+                {
+                    return;
                 }
 
                 _cancellationToken.ThrowIfCancellationRequested();
 
-                if (!mediaFilter.CheckAllPhotoFilters(rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails))
-                {
-                    if (!IsTotalDownloadsEnabled)
-                    {
-                        await DownloadPhotoAsync(_downloadFolder, mediaId, extension, downloadLink);
-                    }
-                    else
-                    {
-                        if (_totalCount++ < TotalDownloads)
-                        {
-                            await DownloadPhotoAsync(_downloadFolder, mediaId, extension, downloadLink);
-                        }
-                    }
-                }
-
-                if (mediaFilter.SaveStatsInCsvFile)
-                {
-                    Console.WriteLine(!_headerIsWritten);
-                    using (var csvWriter = new Csv(statsFile, _delimiter, !_headerIsWritten))
-                    {
-                        await csvWriter.WriteContent(rootObject.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails);
-                        _headerIsWritten = true;
-                    }
-                        
-                }
+                if (_mediaFilter.CheckFilters(mediaInformation.Value)) return;
+                if (CheckTotalDownloads()) await DownloadInstaMediaAsync(mediaInformation.Value, statsFile);
             }
             catch (Exception)
             {
                 // something probably went wrong
             }
         }
-        
-        private async Task DownloadUserPhotosAsync(string input, MediaFilter mediaFilter, int downloadLimit)
-        {
-            var maxId = "";
-            var hasNextPage = true;
-            var downloadCount = 0;
 
-            var downloadFolder = mediaFilter.CustomFolder ? $@"{_downloadFolder}\{input}" : _downloadFolder;
+        private async Task DownloadUserMediaAsync(string input, InputUserType userType, int downloadLimit)
+        {
+            var downloadCount = 0;
+            var downloadFolder = _mediaFilter.CustomFolder ? $@"{_downloadFolder}\{input}" : _downloadFolder;
             var statsFile = $@"{_statsDirectory}\{input}.csv";
 
-            var userId = await _jsonParser.GetUserIdAsync(input);
-
-            using (var csvWriter = new Csv(statsFile, _delimiter))
-                while (hasNextPage)
-                {
-                    var rootObject = await _jsonParser.GetRootObjectAsync(userId, InputType.Username, maxId);
-
-                    if (rootObject.Data.UserMedia.Media.Edges == null) return;
-
-                    maxId = rootObject.Data.UserMedia.Media.PageInfo.EndCursor;
-                    hasNextPage = rootObject.Data.UserMedia.Media.PageInfo.HasNextPage;
-                    
-                    foreach (var edge in rootObject.Data.UserMedia.Media.Edges)
-                    {
-                        var mediaId = edge.Node.Id;
-
-                        string extension;
-                        string downloadLink;
-                        if (!edge.Node.IsVideo)
-                        {
-                            downloadLink = edge.Node.DisplayUrl;
-                            extension = "jpg";
-                        }
-                        else
-                        {
-                            var videoDetails = await _jsonParser.GetRootObjectAsync($@"{Globals.BASE_URL}/p/{edge.Node.ShortCode}/", InputType.Url);
-                            downloadLink = videoDetails.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.VideoUrl;
-                            extension = "mp4";
-                        }
-
-                        _cancellationToken.ThrowIfCancellationRequested();
-
-                        if (mediaFilter.CheckAllUsernameFilters(edge)) continue;
-                        if (!CheckDownloads(downloadCount, downloadLimit)) return;
-
-                        _totalCount++;
-                        downloadCount++;
-                            
-                        await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-
-                        if (mediaFilter.SaveStatsInCsvFile)
-                        {
-                            await csvWriter.WriteContent(edge);
-                        }
-                    }
-                }
-        }
-
-        private async Task<int> DownloadHashtagTopPhotosAsync(string input, List<EdgeHashtagToMediaEdge> edges, MediaFilter mediaFilter, int downloadLimit, string downloadFolder)
-        {
-            int downloadCount = 0;
-            string statsFile = $@"{_statsDirectory}\{input}.csv";
-
-            using (var csvWriter = new Csv(statsFile, _delimiter))
-            foreach (EdgeHashtagToMediaEdge edge in edges)
+            if (!File.Exists(statsFile))
             {
-                string mediaId = edge.Node.Id;
-
-                string extension;
-                string downloadLink;
-                if (!edge.Node.IsVideo)
+                using (var csv = new Csv(statsFile, _delimiter))
                 {
-                    downloadLink = edge.Node.DisplayUrl;
-                    extension = "jpg";
-                }
-                else
-                {
-                    RootObject videoDetails = await _jsonParser.GetRootObjectAsync($@"{Globals.BASE_URL}/p/{edge.Node.Shortcode}/", InputType.Url);
-
-                    if (videoDetails.MediaEntryData.MediaPostPage == null) return 0;
-
-                    downloadLink = videoDetails.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.VideoUrl;
-                    extension = "mp4";
-                }
-
-                _cancellationToken.ThrowIfCancellationRequested();
-
-                if (!mediaFilter.CheckAllHashtagFilters(edge.Node))
-                {
-                    if (!CheckDownloads(downloadCount, downloadLimit)) return 0;
-
-                    _totalCount++;
-                    downloadCount++;
-
-                    await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-                    
-                    if (mediaFilter.SaveStatsInCsvFile)
-                    {
-                        await csvWriter.WriteContent(edge);
-                    }
+                    csv.WriteHeader();
                 }
             }
 
-            return downloadCount;
+            IResult<InstaUserInfo> userNameFromId = null;
+
+            if (userType == InputUserType.Id)
+            {
+                userNameFromId = await _instaApi.GetUserInfoByIdAsync(long.Parse(input));
+
+                if (!userNameFromId.Succeeded) return;
+            }
+
+            var username = userNameFromId == null ? input : userNameFromId.Value.Username;
+            var maxId = "";
+
+            do
+            {
+                var userInformation = await _instaApi.GetUserMediaAsync(username, PaginationParameters.MaxPagesToLoad(1).StartFromId(maxId));
+                maxId = userInformation.Value.NextId;
+
+                if (!userInformation.Succeeded) return;
+
+                foreach (var m in userInformation.Value)
+                {
+                    _cancellationToken.ThrowIfCancellationRequested();
+
+                    if (_mediaFilter.CheckFilters(m)) continue;
+
+                    if (CheckTotalDownloads() && CheckDownloadLimit(downloadCount++, downloadLimit)) await DownloadInstaMediaAsync(m, statsFile, downloadFolder);
+                    else return;
+                }
+
+            } while (true);
         }
 
-        private async Task DownloadHashtagPhotosAsync(string input, MediaFilter mediaFilter, int downloadLimit)
+        private async Task DownloadTagMediaAsync(string input, int downloadLimit)
         {
-            var maxId = "";
             var downloadCount = 0;
-
-            var downloadFolder = mediaFilter.CustomFolder ? $@"{_downloadFolder}\{input}" : _downloadFolder;
+            var downloadFolder = _mediaFilter.CustomFolder ? $@"{_downloadFolder}\{input}" : _downloadFolder;
             var statsFile = $@"{_statsDirectory}\{input}.csv";
 
-            var rootObject = await _jsonParser.GetRootObjectAsync(input, InputType.Hashtag, maxId);
-            if (rootObject.MediaEntryData.HashtagPage == null) return;
-
-            if (!mediaFilter.SkipTopPosts)
+            if (!File.Exists(statsFile))
             {
-                downloadCount = await DownloadHashtagTopPhotosAsync(input, rootObject.MediaEntryData.HashtagPage[0].GraphMedia.Hashtag.EdgeHashtagToTopPosts.Edges, mediaFilter, downloadLimit, downloadFolder);
-            }
-
-            using (var csvWriter = new Csv(statsFile, _delimiter, mediaFilter.SkipTopPosts))
-            {
-                bool hasNextPage;
-                do
+                using (var csv = new Csv(statsFile, _delimiter))
                 {
-                    maxId = rootObject.MediaEntryData.HashtagPage[0].GraphMedia.Hashtag.EdgeHashtagToMedia.PageInfo.EndCursor;
-                    hasNextPage = rootObject.MediaEntryData.HashtagPage[0].GraphMedia.Hashtag.EdgeHashtagToMedia.PageInfo.HasNextPage;
-
-                    foreach (EdgeHashtagToMediaEdge edge in rootObject.MediaEntryData.HashtagPage[0].GraphMedia.Hashtag.EdgeHashtagToMedia.Edges)
-                    {
-                        string mediaId = edge.Node.Id;
-
-                        string extension;
-                        string downloadLink;
-                        if (!edge.Node.IsVideo)
-                        {
-                            downloadLink = edge.Node.DisplayUrl;
-                            extension = "jpg";
-                        }
-                        else
-                        {
-                            RootObject videoDetails = await _jsonParser.GetRootObjectAsync($@"{Globals.BASE_URL}/p/{edge.Node.Shortcode}/", InputType.Url);
-                            if (videoDetails.MediaEntryData.MediaPostPage == null) return;
-
-                            downloadLink = videoDetails.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.VideoUrl;
-                            extension = "mp4";
-                        }
-
-                        _cancellationToken.ThrowIfCancellationRequested();
-
-                        if (!mediaFilter.CheckAllHashtagFilters(edge.Node))
-                        {
-                            if (!CheckDownloads(downloadCount, downloadLimit)) return;
-
-                            _totalCount++;
-                            downloadCount++;
-
-                            await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-
-                            if (mediaFilter.SaveStatsInCsvFile)
-                            {
-                                await csvWriter.WriteContent(edge);
-                            }
-                        }
-                    }
-
-                    rootObject = await _jsonParser.GetRootObjectAsync(input, InputType.Hashtag, maxId);
-                } while (hasNextPage);
-            }
-        }
-
-        private async Task<int> DownloadLocationTopPhotosAsync(string input, List<UserPhotoData> edges, MediaFilter mediaFilter, int downloadLimit, string downloadFolder)
-        {
-            int downloadCount = 0;
-            string statsFile = $@"{_statsDirectory}\{input}.csv";
-
-            using (var csvWriter = new Csv(statsFile, _delimiter))
-            foreach (var data in edges)
-            {
-                string mediaId = data.Id;
-
-                string extension;
-                string downloadLink;
-                if (!data.IsVideo)
-                {
-                    downloadLink = data.DisplaySrc;
-                    extension = "jpg";
-                }
-                else
-                {
-                    RootObject videoDetails = await _jsonParser.GetRootObjectAsync($@"{Globals.BASE_URL}/p/{data.Code}/", InputType.Url);
-
-                    if (videoDetails.MediaEntryData.MediaPostPage == null) return 0;
-
-                    downloadLink = videoDetails.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.VideoUrl;
-                    extension = "mp4";
-                }
-
-                _cancellationToken.ThrowIfCancellationRequested();
-
-                if (!mediaFilter.CheckAllUsernameFilters(data))
-                {
-                    if (!CheckDownloads(downloadCount, downloadLimit)) return 0;
-
-                    _totalCount++;
-                    downloadCount++;
-
-                    await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-
-                    if (mediaFilter.SaveStatsInCsvFile)
-                    {
-                        await csvWriter.WriteContent(data);
-                    }
+                    csv.WriteHeader();
                 }
             }
 
-            return downloadCount;
-        }
-
-        private async Task DownloadLocationPhotosAsync(string input, MediaFilter mediaFilter, int downloadLimit)
-        {
             var maxId = "";
-            int downloadCount = 0;
-
-            string downloadFolder = mediaFilter.CustomFolder ? $@"{_downloadFolder}\{input}" : _downloadFolder;
-            string statsFile = $@"{_statsDirectory}\{input}.csv";
-            
-            var rootObject = await _jsonParser.GetRootObjectAsync(input, InputType.Location, maxId);
-            if (rootObject.MediaEntryData.LocationsPage == null) return;
-
-            if (!mediaFilter.SkipTopPosts)
+            do
             {
-                downloadCount = await DownloadLocationTopPhotosAsync(input, rootObject.MediaEntryData.LocationsPage[0].Location.TopPosts.Nodes, mediaFilter, downloadLimit, downloadFolder);
-            }
+                var tagMedia = await _instaApi.GetTagFeedAsync(input, PaginationParameters.MaxPagesToLoad(1).StartFromId(maxId));
 
-            using (var csvWriter = new Csv(statsFile, _delimiter, mediaFilter.SkipTopPosts))
-            {
-                bool hasNextPage;
-                do
+                maxId = tagMedia.Value.NextId;
+
+                if (!_mediaFilter.SkipTopPosts)
                 {
-                    rootObject = await _jsonParser.GetRootObjectAsync(input, InputType.Location, maxId);
-
-                    maxId = rootObject.MediaEntryData.LocationsPage[0].Location.Media.PageInfo.EndCursor;
-                    hasNextPage = rootObject.MediaEntryData.LocationsPage[0].Location.Media.PageInfo.HasNextPage;
-
-                    foreach (var data in rootObject.MediaEntryData.LocationsPage[0].Location.Media.Nodes)
+                    foreach (var rankedMedia in tagMedia.Value.RankedMedias)
                     {
-                        string mediaId = data.Id;
-
-                        string extension;
-                        string downloadLink;
-                        if (!data.IsVideo)
-                        {
-                            downloadLink = data.DisplaySrc;
-                            extension = "jpg";
-                        }
-                        else
-                        {
-                            RootObject videoDetails = await _jsonParser.GetRootObjectAsync($@"{Globals.BASE_URL}/p/{data.Code}/", InputType.Url);
-
-                            downloadLink = videoDetails.MediaEntryData.MediaPostPage[0].GraphMedia.MediaDetails.VideoUrl;
-                            extension = "mp4";
-                        }
-
                         _cancellationToken.ThrowIfCancellationRequested();
 
-                        if (!mediaFilter.CheckAllUsernameFilters(data))
-                        {
-                            if (!CheckDownloads(downloadCount, downloadLimit)) return;
+                        if (_mediaFilter.CheckFilters(rankedMedia)) continue;
 
-                            _totalCount++;
-                            downloadCount++;
-
-                            await DownloadPhotoAsync(downloadFolder, mediaId, extension, downloadLink);
-
-                            if (mediaFilter.SaveStatsInCsvFile)
-                            {
-                                await csvWriter.WriteContent(data);
-                            }
-                        }
+                        if (CheckTotalDownloads() && CheckDownloadLimit(downloadCount++, downloadLimit)) await DownloadInstaMediaAsync(rankedMedia, statsFile, downloadFolder);
+                        else return;
                     }
-                } while (hasNextPage);
-            }
+                }
+                
+                foreach (var media in tagMedia.Value.Medias)
+                {
+                    _cancellationToken.ThrowIfCancellationRequested();
+
+                    if (_mediaFilter.CheckFilters(media)) continue;
+
+                    if (CheckTotalDownloads() && CheckDownloadLimit(downloadCount++, downloadLimit)) await DownloadInstaMediaAsync(media, statsFile, downloadFolder);
+                    else return;
+                }
+
+            } while (true);
         }
-        
-        public async Task DownloadPhotoAsync(string directoryPath, string fileName, string extension, string url)
+
+        private async Task DownloadLocationMediaAsync(string input, int downloadLimit)
+        {
+            var downloadCount = 0;
+            var downloadFolder = _mediaFilter.CustomFolder ? $@"{_downloadFolder}\{input}" : _downloadFolder;
+            var statsFile = $@"{_statsDirectory}\{input}.csv";
+
+            if (!File.Exists(statsFile))
+            {
+                using (var csv = new Csv(statsFile, _delimiter))
+                {
+                    csv.WriteHeader();
+                }
+            }
+
+            var maxId = "";
+            do
+            {
+                var locationMedia = await _instaApi.GetLocationFeed(long.Parse(input), PaginationParameters.MaxPagesToLoad(1).StartFromId(maxId));
+
+                maxId = locationMedia.Value.NextId;
+
+                if (!_mediaFilter.SkipTopPosts)
+                {
+                    foreach (var rankedMedia in locationMedia.Value.RankedMedias)
+                    {
+                        _cancellationToken.ThrowIfCancellationRequested();
+
+                        if (_mediaFilter.CheckFilters(rankedMedia)) continue;
+
+                        if (CheckTotalDownloads() && CheckDownloadLimit(downloadCount++, downloadLimit)) await DownloadInstaMediaAsync(rankedMedia, statsFile, downloadFolder);
+                        else return;
+                    }
+                }
+
+                foreach (var media in locationMedia.Value.Medias)
+                {
+                    _cancellationToken.ThrowIfCancellationRequested();
+
+                    if (_mediaFilter.CheckFilters(media)) continue;
+
+                    if (CheckTotalDownloads() && CheckDownloadLimit(downloadCount++, downloadLimit)) await DownloadInstaMediaAsync(media, statsFile, downloadFolder);
+                    else return;
+                }
+
+            } while (true);
+        }
+
+        private async Task DownloadMediaAsync(string savePath, string fileName, string downloadUrl)
         {
             try
             {
-                if (!Directory.Exists(directoryPath)) Directory.CreateDirectory(directoryPath);
+                if (!Directory.Exists(savePath)) Directory.CreateDirectory(savePath);
 
-                using (Request request = new Request(_userAgent, _proxy, _requestTimeout, _cookies))
+                using (var request = new Request(_userAgent, _proxy, _requestTimeout))
                 {
-                    HttpResponseMessage msg = await request.GetRequestResponseAsync(url);
+                    var msg = await request.GetRequestResponseAsync(downloadUrl);
                     if (msg.IsSuccessStatusCode)
                     {
-                        using (var fs = File.Open($@"{directoryPath}\{fileName}.{extension}", FileMode.Create))
+                        using (var fs = File.Open($@"{savePath}\{fileName}", FileMode.Create))
                         {
                             //byte[] bytes = await msg.Content.ReadAsByteArrayAsync();
                             //await fs.WriteAsync(bytes, 0, bytes.Length);
@@ -471,44 +408,28 @@ namespace InstagramDownloaderV2.Classes.Downloader
             }
         }
 
-        private bool CheckDownloads(int downloadCount, int downloadLimit)
+        #region ValidateDownloads
+        private bool CheckTotalDownloads()
         {
-            if (IsTotalDownloadsEnabled)
-            {
-                if (_totalCount < TotalDownloads)
-                {
-                    if (downloadLimit != 0)
-                    {
-                        if (downloadCount < downloadLimit)
-                        {
-                            return true;
-                        }
-                    }
-                    else
-                    {
-                        return true;
-                    }
-                }
-                else
-                {
-                    return false;
-                }
-            }
-
-            if (downloadLimit != 0)
-            {
-                if (downloadCount < downloadLimit)
-                {
-                    return true;
-                }
-            }
-            else
+            if (!IsTotalDownloadsEnabled)
             {
                 return true;
             }
 
-            return false;
+            return _totalCount++ < TotalDownloads;
         }
+
+        private bool CheckDownloadLimit(int downloadCount, int downloadLimit)
+        {
+            if (downloadLimit == 0)
+            {
+                return true;
+            }
+
+            return downloadCount < downloadLimit;
+        }
+        #endregion
+
         #endregion
 
     }

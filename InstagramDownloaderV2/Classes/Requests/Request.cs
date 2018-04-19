@@ -11,29 +11,30 @@ namespace InstagramDownloaderV2.Classes.Requests
         private readonly HttpClient _httpClient;
         private readonly HttpClientHandler _httpClientHandler;
 
-        public Request(string userAgent, WebProxy proxy, double requestTimeout, CookieContainer cookies = null)
+        public Request(string userAgent, IWebProxy proxy, double requestTimeout)
         {
             _httpClientHandler = new HttpClientHandler
             {
-                Proxy = proxy,
-                CookieContainer = cookies ?? new CookieContainer()
+                Proxy = proxy
             };
+
             _httpClient = new HttpClient(_httpClientHandler)
             {
                 Timeout = TimeSpan.FromSeconds(requestTimeout)
             };
+
             _httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
         }
 
         public async Task<HttpResponseMessage> GetRequestResponseAsync(string url)
         {
-            HttpResponseMessage message = await _httpClient.GetAsync(url);
+            var message = await _httpClient.GetAsync(url);
             return message;
         }
 
         public async Task<string> GetRequestStringAsync(string url)
         {
-            using (HttpResponseMessage message = await _httpClient.GetAsync(url))
+            using (var message = await _httpClient.GetAsync(url))
             {
                 return await message.Content.ReadAsStringAsync();
             }
@@ -41,7 +42,7 @@ namespace InstagramDownloaderV2.Classes.Requests
 
         public async Task<Stream> GetStreamAsync(string url)
         {
-            using (Stream stream = await _httpClient.GetStreamAsync(url))
+            using (var stream = await _httpClient.GetStreamAsync(url))
             {
                 return stream;
             }
@@ -55,14 +56,9 @@ namespace InstagramDownloaderV2.Classes.Requests
 
         public async Task<bool> IsSuccessStatusCodeAsync(string url)
         {
-            using (HttpResponseMessage message = await _httpClient.GetAsync(url))
+            using (var message = await _httpClient.GetAsync(url))
             {
-                if (message.IsSuccessStatusCode)
-                {
-                    return true;
-                }
-
-                return false;
+                return message.IsSuccessStatusCode;
             }
         }
 
