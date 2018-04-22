@@ -281,7 +281,7 @@ namespace InstagramDownloaderV2.Classes.Downloader
                     else return;
                 }
 
-            } while (true);
+            } while (maxId != null);
         }
 
         private async Task DownloadTagMediaAsync(string input, int downloadLimit)
@@ -328,7 +328,7 @@ namespace InstagramDownloaderV2.Classes.Downloader
                     else return;
                 }
 
-            } while (true);
+            } while (maxId != null);
         }
 
         private async Task DownloadLocationMediaAsync(string input, int downloadLimit)
@@ -375,7 +375,7 @@ namespace InstagramDownloaderV2.Classes.Downloader
                     else return;
                 }
 
-            } while (true);
+            } while (maxId != null);
         }
 
         private async Task DownloadMediaAsync(string savePath, string fileName, string downloadUrl)

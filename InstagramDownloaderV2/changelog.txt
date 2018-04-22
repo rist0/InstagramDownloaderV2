@@ -1,4 +1,7 @@
-﻿2.1.0.0
+﻿2.1.0.1
+- Fixed an issue that caused the software to be stuck in a loop forever
+
+2.1.0.0
 [Changes]
 - The software now uses Instagram private API (as opposed to previous web Instagram)
 - A valid Instagram account is now required in order to download
