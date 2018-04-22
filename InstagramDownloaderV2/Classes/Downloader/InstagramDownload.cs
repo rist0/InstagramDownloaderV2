@@ -267,9 +267,10 @@ namespace InstagramDownloaderV2.Classes.Downloader
             do
             {
                 var userInformation = await _instaApi.GetUserMediaAsync(username, PaginationParameters.MaxPagesToLoad(1).StartFromId(maxId));
-                maxId = userInformation.Value.NextId;
 
                 if (!userInformation.Succeeded) return;
+
+                maxId = userInformation.Value.NextId;
 
                 foreach (var m in userInformation.Value)
                 {
@@ -302,6 +303,8 @@ namespace InstagramDownloaderV2.Classes.Downloader
             do
             {
                 var tagMedia = await _instaApi.GetTagFeedAsync(input, PaginationParameters.MaxPagesToLoad(1).StartFromId(maxId));
+
+                if (!tagMedia.Succeeded) return;
 
                 maxId = tagMedia.Value.NextId;
 
@@ -349,6 +352,8 @@ namespace InstagramDownloaderV2.Classes.Downloader
             do
             {
                 var locationMedia = await _instaApi.GetLocationFeed(long.Parse(input), PaginationParameters.MaxPagesToLoad(1).StartFromId(maxId));
+
+                if (!locationMedia.Succeeded) return;
 
                 maxId = locationMedia.Value.NextId;
 

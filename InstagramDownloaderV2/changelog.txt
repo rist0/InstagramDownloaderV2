@@ -1,4 +1,7 @@
-﻿2.1.0.1
+﻿2.1.0.2
+- Fixed an issue that caused the software to crash if the input was invalid
+
+2.1.0.1
 - Fixed an issue that caused the software to be stuck in a loop forever
 
 2.1.0.0
