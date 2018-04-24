@@ -2,10 +2,9 @@
 # Instagram Downloader V2
 
 ## Preview
-![Downloader](https://i.imgur.com/vz3N0oL.png)
+![Downloader](https://i.imgur.com/6TWjCN7.png)
 ![Filters](https://i.imgur.com/x4texGD.png)
 ![Settings](https://i.imgur.com/abEeE0s.png)
-![Logs](https://i.imgur.com/mtMKTGQ.png)
 
 ## Features
  - Multi-threaded
