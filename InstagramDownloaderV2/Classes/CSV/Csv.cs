@@ -60,10 +60,10 @@ namespace InstagramDownloaderV2.Classes.CSV
                 MediaId = media.Pk,
                 Dimensions = $"W: {width} H: {height}",
                 Caption = media.Caption?.Text,
-                Likes = media.LikesCount,
-                Comments = long.Parse(media.CommentsCount),
+                Likes = media.LikesCount.ToString(),
+                Comments = media.CommentsCount,
                 IsVideo = media.HasAudio,
-                VideoViews = media.ViewCount,
+                VideoViews = media.ViewCount.ToString(),
                 Date = media.TakenAt.ToLocalTime()
             };
 
@@ -105,10 +105,10 @@ namespace InstagramDownloaderV2.Classes.CSV
                 MediaId = media.Pk,
                 Dimensions = $"W: {width} H: {height}",
                 Caption = "",
-                Likes = 0,
-                Comments = 0,
+                Likes = "0",
+                Comments = "0",
                 IsVideo = isVideo,
-                VideoViews = 0,
+                VideoViews = "0",
                 Date = null
             };
 

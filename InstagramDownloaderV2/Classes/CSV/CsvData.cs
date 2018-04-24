@@ -10,10 +10,10 @@ namespace InstagramDownloaderV2.Classes.CSV
         public string MediaId { get; set; }
         public string Dimensions { get; set; }
         public string Caption { get; set; }
-        public long Likes { get; set; }
-        public long Comments { get; set; }
+        public string Likes { get; set; }
+        public string Comments { get; set; }
         public bool IsVideo { get; set; }
-        public long VideoViews { get; set; }
+        public string VideoViews { get; set; }
         public DateTime? Date { get; set; }
     }
 }

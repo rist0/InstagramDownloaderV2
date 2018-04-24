@@ -266,7 +266,8 @@ namespace InstagramDownloaderV2.Classes.Downloader
 
             do
             {
-                var userInformation = await _instaApi.GetUserMediaAsync(username, PaginationParameters.MaxPagesToLoad(1).StartFromId(maxId));
+                var userInformation = await _instaApi.GetUserMediaAsync(username,
+                    PaginationParameters.MaxPagesToLoad(1).StartFromId(maxId));
 
                 if (!userInformation.Succeeded) return;
 
@@ -278,7 +279,8 @@ namespace InstagramDownloaderV2.Classes.Downloader
 
                     if (_mediaFilter.CheckFilters(m)) continue;
 
-                    if (CheckTotalDownloads() && CheckDownloadLimit(downloadCount++, downloadLimit)) await DownloadInstaMediaAsync(m, statsFile, downloadFolder);
+                    if (CheckTotalDownloads() && CheckDownloadLimit(downloadCount++, downloadLimit))
+                        await DownloadInstaMediaAsync(m, statsFile, downloadFolder);
                     else return;
                 }
 

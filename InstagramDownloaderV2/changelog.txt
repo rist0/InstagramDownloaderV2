@@ -1,4 +1,7 @@
-﻿2.1.0.2
+﻿2.1.0.3
+- Fixed an issue that caused a crash if a media had no comments
+
+2.1.0.2
 - Fixed an issue that caused the software to crash if the input was invalid
 
 2.1.0.1
